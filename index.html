@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Flowify - Beta</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-theme="dark">
+    <!-- Custom Nav Bar -->
+    <nav class="custom-navbar">
+      <div class="navbar-left">
+        <button
+          class="nav-back-btn"
+          id="navBackBtn"
+          onclick="goBack()"
+          style="display: none"
+        >
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="navbar-title" id="navbarTitle">
+          <i class="fas fa-music"></i> Flowify
+        </div>
+      </div>
+      <div class="navbar-right">
+        <button
+          class="navbar-icon-btn"
+          onclick="showSettingsModal()"
+          title="Settings"
+        >
+          <i class="fas fa-cog"></i>
+        </button>
+        <button
+          class="window-control-btn"
+          onclick="minimizeWindow()"
+          title="Minimize"
+        >
+          <i class="fas fa-window-minimize"></i>
+        </button>
+        <button
+          class="window-control-btn"
+          onclick="maximizeWindow()"
+          title="Maximize"
+        >
+          <i class="far fa-window-maximize"></i>
+        </button>
+        <button
+          class="window-control-btn close-btn"
+          onclick="closeWindow()"
+          title="Close"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div class="logo"><i class="fas fa-music"></i> Flowify - Beta</div>
+        <div
+          class="nav-item active"
+          data-section="search"
+          onclick="showSection('search')"
+        >
+          <span class="nav-icon"><i class="fas fa-search"></i></span>
+          <span>Search</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="playlists"
+          onclick="showSection('playlists')"
+        >
+          <span class="nav-icon"><i class="fas fa-list"></i></span>
+          <span>Playlists</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="liked"
+          onclick="showSection('liked')"
+        >
+          <span class="nav-icon"><i class="fas fa-heart"></i></span>
+          <span>Liked Songs</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="downloads"
+          onclick="showSection('downloads')"
+        >
+          <span class="nav-icon"><i class="fas fa-download"></i></span>
+          <span>Downloads</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="info"
+          onclick="showSection('info')"
+        >
+          <span class="nav-icon"><i class="fas fa-info-circle"></i></span>
+          <span>Info</span>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="header">
+          <div class="search-bar" id="searchBar">
+            <input
+              id="query"
+              class="search-input"
+              type="text"
+              placeholder="Search for songs, artists, albums..."
+            />
+            <button class="btn" id="searchBtn" onclick="search()">
+              <i class="fas fa-search"></i>
+              Search
+            </button>
+          </div>
+          <div id="playlistControls" style="display: none">
+            <button
+              class="btn btn-secondary"
+              onclick="showCreatePlaylistModal()"
+            >
+              <i class="fas fa-plus"></i>
+              New Playlist
+            </button>
+          </div>
+        </header>
+
+        <section class="content-area">
+          <section class="section active" id="search">
+            <div
+              id="suggestions"
+              class="suggestions-section"
+              style="display: none"
+            >
+              <h2 class="section-title">Recommended for You</h2>
+              <div id="suggestionsGrid" class="track-grid"></div>
+            </div>
+            <h2
+              class="section-title"
+              id="searchResultsTitle"
+              style="display: none"
+            >
+              Search Results
+            </h2>
+            <div id="results" class="track-grid"></div>
+            <div id="searchEmpty" class="empty-state">
+              <div class="welcome-state">
+                <i
+                  class="fas fa-music"
+                  style="font-size: 64px; opacity: 0.5; margin-bottom: 20px"
+                ></i>
+                <h3>Welcome to Flowify</h3>
+                <p>
+                  Search for your favorite songs, artists, or albums to get
+                  started
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="playlists">
+            <h2 class="section-title">Your Playlists</h2>
+            <div id="playlistsList"></div>
+            <div id="playlistsEmpty" class="empty-state">
+              <h3>No playlists yet</h3>
+              <p>Create your first playlist to organize your music</p>
+            </div>
+          </section>
+
+          <section class="section" id="playlist-detail">
+            <button class="btn btn-secondary" onclick="backToPlaylists()" style="margin-bottom: 20px;">
+              <i class="fas fa-arrow-left"></i> Back to Playlists
+            </button>
+            <div class="playlist-detail-header">
+              <div class="playlist-detail-info">
+                <h1 id="playlistDetailName">Playlist Name</h1>
+                <p id="playlistDetailDesc">Description</p>
+                <p id="playlistDetailCount">0 songs</p>
+              </div>
+              <div class="playlist-detail-actions">
+                <button class="btn" onclick="playCurrentPlaylistView()">
+                  <i class="fas fa-play"></i> Play All
+                </button>
+                <button class="btn btn-secondary" onclick="deleteCurrentPlaylist()">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+            <div id="playlistDetailTracks"></div>
+          </section>
+
+          <section class="section" id="liked">
+            <h2 class="section-title">Liked Songs</h2>
+            <div id="likedSongs"></div>
+            <div id="likedEmpty" class="empty-state">
+              <h3>No liked songs yet</h3>
+              <p>Start liking songs to build your collection</p>
+            </div>
+          </section>
+
+          <section class="section" id="downloads">
+            <h2 class="section-title">Downloaded Music</h2>
+            <div id="downloadsList"></div>
+            <div id="downloadsEmpty" class="empty-state">
+              <h3>No downloads yet</h3>
+              <p>Download songs for offline listening</p>
+            </div>
+          </section>
+
+          <section class="section" id="artist">
+            <div class="artist-header" id="artistHeader" style="display: none">
+              <img id="artistImage" class="artist-image" src="" alt="" />
+              <div class="artist-info">
+                <h1 id="artistName">Artist Name</h1>
+                <p id="artistBio">Artist information</p>
+              </div>
+            </div>
+            <div
+              id="artistTracks"
+              class="track-grid"
+              style="margin-top: 30px"
+            ></div>
+          </section>
+
+          <section class="section" id="info">
+            <h2 class="section-title">About Flowify</h2>
+            <div class="info-container">
+              <div class="info-card">
+                <h3><i class="fas fa-sync-alt"></i> Updates</h3>
+                <div id="updateStatus" class="update-status">
+                  <p>Current Version: <strong>v1.0.0</strong></p>
+                  <button class="btn" onclick="checkForUpdates()">
+                    <i class="fas fa-download"></i> Check for Updates
+                  </button>
+                  <div id="updateInfo" style="margin-top: 15px;"></div>
+                </div>
+              </div>
+
+              <div class="info-card">
+                <h3><i class="fas fa-list-alt"></i> Changelog</h3>
+                <div class="changelog">
+                  <div class="changelog-entry">
+                    <div class="changelog-version">v1.0.0 - Beta</div>
+                    <ul>
+                      <li><i class="fas fa-plus-circle"></i> Auto-update system with GitHub releases</li>
+                      <li><i class="fas fa-plus-circle"></i> System tray support - minimize to tray</li>
+                      <li><i class="fas fa-plus-circle"></i> Custom window controls</li>
+                      <li><i class="fas fa-plus-circle"></i> Discord Rich Presence integration</li>
+                      <li><i class="fas fa-plus-circle"></i> Offline downloads</li>
+                      <li><i class="fas fa-plus-circle"></i> Smart song recommendations</li>
+                      <li><i class="fas fa-plus-circle"></i> Volume & progress caching</li>
+                      <li><i class="fas fa-plus-circle"></i> Playlist management</li>
+                      <li><i class="fas fa-plus-circle"></i> Light/Dark theme support</li>
+                      <li><i class="fas fa-plus-circle"></i> Custom scrollbar design</li>
+                      <li><i class="fas fa-plus-circle"></i> Smooth animations</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="info-card">
+                <h3><i class="fas fa-terminal"></i> Debug Console</h3>
+                <div class="debug-console" id="debugConsole"></div>
+                <button class="btn btn-secondary" onclick="clearDebugConsole()" style="margin-top: 10px;">
+                  <i class="fas fa-trash"></i> Clear Console
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div
+      id="settingsModal"
+      class="modal"
+      style="display: none"
+      onclick="closeSettingsModal(event)"
+    >
+      <div
+        class="modal-content settings-modal-content"
+        onclick="event.stopPropagation()"
+      >
+        <div class="modal-header">
+          <h2><i class="fas fa-cog"></i> Settings</h2>
+          <button class="modal-close" onclick="closeSettingsModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="settings-container">
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-palette"></i> Theme</h3>
+              <p>Choose between light and dark mode</p>
+            </div>
+            <div class="theme-toggle">
+              <button
+                class="theme-btn"
+                data-theme="light"
+                onclick="setTheme('light')"
+              >
+                <i class="fas fa-sun"></i> Light
+              </button>
+              <button
+                class="theme-btn active"
+                data-theme="dark"
+                onclick="setTheme('dark')"
+              >
+                <i class="fas fa-moon"></i> Dark
+              </button>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-volume-up"></i> Audio Quality</h3>
+              <p>Select playback quality</p>
+            </div>
+            <select
+              class="quality-select"
+              id="qualitySelect"
+              onchange="updateQuality(this.value)"
+            >
+              <option value="HIGH">High (320kbps)</option>
+              <option value="LOSSLESS" selected>Lossless (FLAC)</option>
+              <option value="HI_RES">Hi-Res (MQA)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fab fa-discord"></i> Discord Rich Presence</h3>
+              <p>Show what you're listening to on Discord</p>
+            </div>
+            <div class="theme-toggle">
+              <button
+                class="theme-btn"
+                data-rpc="off"
+                onclick="toggleDiscordRPC(false)"
+              >
+                <i class="fas fa-times"></i> Off
+              </button>
+              <button
+                class="theme-btn active"
+                data-rpc="on"
+                onclick="toggleDiscordRPC(true)"
+              >
+                <i class="fas fa-check"></i> On
+              </button>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-database"></i> Storage</h3>
+              <p>Manage your downloaded music</p>
+            </div>
+            <button class="btn btn-secondary" onclick="clearDownloads()">
+              <i class="fas fa-trash"></i> Clear Downloads
+            </button>
+          </div>
+          <h3>About</h3>
+          <p>
+            Flowify is a free music player, we focus on privacy, no account, no
+            tracking, no bullshit, just music.
+          </p>
+          <p>Version 1.0.0 - Beta</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="player-bar">
+      <div class="now-playing">
+        <img
+          id="currentImage"
+          class="now-playing-image"
+          src=""
+          alt=""
+          style="display: none"
+        />
+        <div class="now-playing-info">
+          <h4 id="currentTitle">No song playing</h4>
+          <p id="currentArtist">Select a song to start</p>
+        </div>
+        <button
+          class="control-btn like-btn"
+          id="currentLikeBtn"
+          onclick="likeCurrentTrack()"
+          title="Like"
+        >
+          <i class="far fa-heart" id="currentLikeIcon"></i>
+        </button>
+        <button
+          class="control-btn download-btn"
+          id="currentDownloadBtn"
+          onclick="downloadCurrentTrack()"
+          title="Download"
+        >
+          <i class="fas fa-download" id="currentDownloadIcon"></i>
+        </button>
+      </div>
+
+      <div class="player-center">
+        <div class="player-controls">
+          <button
+            class="control-btn"
+            onclick="toggleShuffle()"
+            id="shuffleControlBtn"
+            title="Shuffle"
+          >
+            <i class="fas fa-random"></i>
+          </button>
+          <button
+            class="control-btn"
+            onclick="previousTrack()"
+            title="Previous"
+          >
+            <i class="fas fa-step-backward"></i>
+          </button>
+          <button
+            class="control-btn play-btn"
+            id="playBtn"
+            onclick="togglePlay()"
+            title="Play/Pause"
+          >
+            <i class="fas fa-play"></i>
+          </button>
+          <button class="control-btn" onclick="nextTrack()" title="Next">
+            <i class="fas fa-step-forward"></i>
+          </button>
+          <button
+            class="control-btn"
+            id="repeatBtn"
+            onclick="toggleRepeat()"
+            title="Repeat"
+          >
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+
+        <div class="progress-section">
+          <span class="time-display" id="currentTime">0:00</span>
+          <div class="progress-container" onclick="seekTo(event)">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <span class="time-display" id="totalTime">0:00</span>
+        </div>
+      </div>
+
+      <div class="volume-control">
+        <i class="fas fa-volume-up volume-icon"></i>
+        <input
+          type="range"
+          id="volumeSlider"
+          class="volume-slider"
+          min="0"
+          max="100"
+          value="70"
+          oninput="setVolume(this.value)"
+        />
+      </div>
+    </div>
+
+    <audio id="player" preload="auto" style="display: none"></audio>
+
+    <!-- Add to Playlist Modal -->
+    <div id="addToPlaylistModal" class="modal" onclick="closeAddToPlaylistModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2><i class="fas fa-list"></i> Add to Playlist</h2>
+          <button class="modal-close" onclick="closeAddToPlaylistModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="playlistSelectionList" class="playlist-selection-list"></div>
+        <button class="btn" onclick="showCreatePlaylistFromAdd()" style="margin-top: 15px; width: 100%;">
+          <i class="fas fa-plus"></i> Create New Playlist
+        </button>
+      </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="createPlaylistModal" class="modal" onclick="closeCreatePlaylistModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2><i class="fas fa-plus-circle"></i> Create New Playlist</h2>
+          <button class="modal-close" onclick="closeCreatePlaylistModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="form-group">
+          <label for="playlistName">Playlist Name</label>
+          <input
+            type="text"
+            id="playlistName"
+            placeholder="Enter playlist name..."
+          />
+        </div>
+        <div class="form-group">
+          <label for="playlistDescription">Description (Optional)</label>
+          <input
+            type="text"
+            id="playlistDescription"
+            placeholder="Enter description..."
+          />
+        </div>
+        <div class="modal-actions">
+          <button
+            class="btn btn-secondary"
+            onclick="closeCreatePlaylistModal()"
+          >
+            Cancel
+          </button>
+          <button class="btn" onclick="createPlaylist()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+{
+  
+  "name": "flowify-beta",
+  "version": "1.0.0",
+  "description": "A free music player - focus on privacy, no account, no tracking.",
+  "license": "MIT",
+  "author": "Flowify Team",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^38.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "discord-rich-presence": "^0.0.8",
+    "electron-updater": "^6.6.2"
+  },
+  "build": {
+    "appId": "com.flowify.musicplayer",
+    "productName": "Flowify",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist",
+      "!.git",
+      "!*.md",
+      "!BUILD.md",
+      "!DISCORD_RPC_SETUP.md",
+      "!DOWNLOADS.md",
+      "!RPC_TROUBLESHOOTING.md"
+    ],
+    "asarUnpack": [
+      "node_modules/discord-rich-presence/**/*"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "naplon74",
+        "repo": "flowify-music-player"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.music"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Audio"
+    }
+  }
+}
