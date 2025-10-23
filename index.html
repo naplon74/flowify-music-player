@@ -8,8 +8,77 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="translations.js"></script>
   </head>
   <body data-theme="dark">
+    <!-- Welcome/Onboarding Screen -->
+    <div id="welcomeScreen" class="welcome-screen" style="display: none;">
+      <div class="welcome-container">
+        <div class="welcome-logo-container">
+          <div class="welcome-logo">
+            <i class="fas fa-music"></i>
+          </div>
+          <div class="welcome-logo-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+          </div>
+        </div>
+        
+        <h1 class="welcome-title">
+          <span class="welcome-text-line" data-i18n="welcome">Welcome to</span>
+          <span class="welcome-text-brand">Flowify</span>
+        </h1>
+        <p class="welcome-subtitle" data-i18n="welcomeSubtitle">Your privacy-first music player</p>
+        
+        <div class="welcome-form">
+          <div class="welcome-section">
+            <label class="welcome-label">
+              <i class="fas fa-language"></i>
+              <span data-i18n="selectLanguage">Select your language</span>
+            </label>
+            <div class="language-selector">
+              <button class="language-btn active" data-lang="en" onclick="selectLanguage('en')">
+                <img src="assets/flag-gb.png" alt="GB" class="flag-icon">
+                <span>English</span>
+              </button>
+              <button class="language-btn" data-lang="fr" onclick="selectLanguage('fr')">
+                <img src="assets/flag-fr.png" alt="FR" class="flag-icon">
+                <span>Français</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="welcome-section">
+            <label class="welcome-label">
+              <i class="fas fa-user"></i>
+              <span data-i18n="enterName">What should we call you?</span>
+            </label>
+            <input 
+              type="text" 
+              id="welcomeNameInput" 
+              class="welcome-input" 
+              data-i18n="namePlaceholder"
+              placeholder="Your name"
+              maxlength="30"
+              autocomplete="off"
+              spellcheck="false"
+              tabindex="0"
+            />
+          </div>
+          
+          <button class="welcome-submit-btn" onclick="completeOnboarding()">
+            <span data-i18n="letsGo">Let's Go!</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+        
+        <div class="welcome-footer">
+          <p>No account needed • No tracking • Just music</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Custom Nav Bar -->
     <nav class="custom-navbar">
       <div class="navbar-left">
@@ -65,8 +134,8 @@
           data-section="search"
           onclick="showSection('search')"
         >
-          <span class="nav-icon"><i class="fas fa-search"></i></span>
-          <span>Search</span>
+          <span class="nav-icon"><i class="fas fa-compass"></i></span>
+          <span data-i18n="navDiscover">Discover</span>
         </div>
         <div
           class="nav-item"
@@ -74,23 +143,15 @@
           onclick="showSection('playlists')"
         >
           <span class="nav-icon"><i class="fas fa-list"></i></span>
-          <span>Playlists</span>
+          <span data-i18n="navPlaylists">Playlists</span>
         </div>
         <div
           class="nav-item"
-          data-section="liked"
-          onclick="showSection('liked')"
+          data-section="customize"
+          onclick="showSection('customize')"
         >
-          <span class="nav-icon"><i class="fas fa-heart"></i></span>
-          <span>Liked Songs</span>
-        </div>
-        <div
-          class="nav-item"
-          data-section="downloads"
-          onclick="showSection('downloads')"
-        >
-          <span class="nav-icon"><i class="fas fa-download"></i></span>
-          <span>Downloads</span>
+          <span class="nav-icon"><i class="fas fa-sliders-h"></i></span>
+          <span data-i18n="navCustomize">Customize</span>
         </div>
         <div
           class="nav-item"
@@ -98,7 +159,7 @@
           onclick="showSection('info')"
         >
           <span class="nav-icon"><i class="fas fa-info-circle"></i></span>
-          <span>Info</span>
+          <span data-i18n="navInfo">Info</span>
         </div>
       </aside>
 
@@ -124,11 +185,25 @@
               <i class="fas fa-plus"></i>
               New Playlist
             </button>
+            <button class="btn" onclick="importPlaylistM3U()">
+              <i class="fas fa-file-import"></i>
+              Import M3U
+            </button>
           </div>
         </header>
 
         <section class="content-area">
           <section class="section active" id="search">
+            <div id="userGreeting" class="user-greeting" style="display: none;">
+              <h1 id="greetingText" class="greeting-text"></h1>
+            </div>
+            <div id="trendingSection" class="trending-section" style="display: none;">
+              <h2 class="section-title">
+                <i class="fas fa-fire"></i>
+                <span data-i18n="trendingSongs">Trending Songs</span>
+              </h2>
+              <div id="trendingGrid" class="track-grid trending-grid"></div>
+            </div>
             <div
               id="suggestions"
               class="suggestions-section"
@@ -160,6 +235,37 @@
             </div>
           </section>
 
+          <!-- Customize Page -->
+          <section class="section" id="customize">
+            <h2 class="section-title"><i class="fas fa-sliders-h"></i> <span data-i18n="customizeTitle">Customize</span></h2>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-adjust"></i> <span data-i18n="theme">Theme</span></h3>
+                  <p data-i18n="themeDesc">Choose light or dark mode</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                  <button class="btn" id="custThemeDark" onclick="setTheme('dark')">Dark</button>
+                  <button class="btn" id="custThemeLight" onclick="setTheme('light')">Light</button>
+                </div>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-fire"></i> <span data-i18n="showTrending">Show Trending Songs</span></h3>
+                  <p data-i18n="showTrendingDesc">Show or hide trending section on Discover</p>
+                </div>
+                <label class="switch"><input type="checkbox" id="custToggleTrending"><span class="slider"></span></label>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fab fa-discord"></i> <span data-i18n="enableDiscord">Enable Discord RPC</span></h3>
+                  <p data-i18n="enableDiscordDesc">Show your activity on Discord</p>
+                </div>
+                <label class="switch"><input type="checkbox" id="custToggleDiscord"><span class="slider"></span></label>
+              </div>
+            </div>
+          </section>
+
           <section class="section" id="playlists">
             <h2 class="section-title">Your Playlists</h2>
             <div id="playlistsList"></div>
@@ -186,30 +292,18 @@
                 <button class="btn" onclick="showEditPlaylistModal()">
                   <i class="fas fa-pen"></i> Edit
                 </button>
+                <button class="btn" onclick="downloadPlaylist()">
+                  <i class="fas fa-download"></i> Download
+                </button>
+                <button class="btn" onclick="exportPlaylistM3U()">
+                  <i class="fas fa-file-export"></i> Export
+                </button>
                 <button class="btn btn-secondary" onclick="deleteCurrentPlaylist()">
                   <i class="fas fa-trash"></i> Delete
                 </button>
               </div>
             </div>
             <div id="playlistDetailTracks"></div>
-          </section>
-
-          <section class="section" id="liked">
-            <h2 class="section-title">Liked Songs</h2>
-            <div id="likedSongs"></div>
-            <div id="likedEmpty" class="empty-state">
-              <h3>No liked songs yet</h3>
-              <p>Start liking songs to build your collection</p>
-            </div>
-          </section>
-
-          <section class="section" id="downloads">
-            <h2 class="section-title">Downloaded Music</h2>
-            <div id="downloadsList"></div>
-            <div id="downloadsEmpty" class="empty-state">
-              <h3>No downloads yet</h3>
-              <p>Download songs for offline listening</p>
-            </div>
           </section>
 
           <section class="section" id="artist">
@@ -233,7 +327,7 @@
               <div class="info-card">
                 <h3><i class="fas fa-sync-alt"></i> Updates</h3>
                 <div id="updateStatus" class="update-status">
-                  <p>Current Version: <strong>v0.0.1</strong></p>
+                  <p>Current Version: <strong>v0.0.2</strong></p>
                   <button class="btn" onclick="checkForUpdates()">
                     <i class="fas fa-download"></i> Check for Updates
                   </button>
@@ -245,7 +339,7 @@
                 <h3><i class="fas fa-list-alt"></i> Changelog</h3>
                 <div class="changelog">
                   <div class="changelog-entry">
-                    <div class="changelog-version">v0.0.1 - Beta</div>
+                    <div class="changelog-version">v0.0.2 - Beta</div>
                     <ul>
                       <li><i class="fas fa-plus-circle"></i> Auto-update system with GitHub releases</li>
                       <li><i class="fas fa-plus-circle"></i> System tray support - minimize to tray</li>
@@ -362,12 +456,122 @@
               <i class="fas fa-trash"></i> Clear Downloads
             </button>
           </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-language"></i> Language</h3>
+              <p>Select your preferred language</p>
+            </div>
+            <select class="quality-select" id="languageSelect" onchange="changeLanguage(this.value)">
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-user"></i> User Name</h3>
+              <p>Change your display name</p>
+            </div>
+            <button class="btn" onclick="changeUserName()">
+              <i class="fas fa-edit"></i> Change Name
+            </button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-paint-brush"></i> Custom Theme</h3>
+              <p>Customize colors and gradients</p>
+            </div>
+            <button class="btn" onclick="openCustomThemeEditor()">
+              <i class="fas fa-edit"></i> Edit Custom Theme
+            </button>
+          </div>
+          <div class="setting-item" style="border: 2px solid rgba(255, 59, 48, 0.3); background: rgba(255, 59, 48, 0.05);">
+            <div class="setting-info">
+              <h3><i class="fas fa-redo"></i> Reset Application</h3>
+              <p>Clear all data and restart (for testing)</p>
+            </div>
+            <button class="btn btn-danger" onclick="resetApp()">
+              <i class="fas fa-exclamation-triangle"></i> Reset App
+            </button>
+          </div>
           <h3 style="text-align: center;">About</h3>
-          <p>
+          <p style="text-align: center;">
             Flowify is a free music player, we focus on privacy, no account, no
             tracking, no bullshit, just music.
           </p>
-          <p>Version 0.0.1 - Beta</p>
+          <p style="text-align: center;">Version 0.0.2 - Beta</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Theme Editor Modal -->
+    <div id="customThemeModal" class="modal" style="display: none" onclick="closeCustomThemeEditor(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+        <div class="modal-header">
+          <h2><i class="fas fa-paint-brush"></i> Custom Theme Editor</h2>
+          <button class="modal-close" onclick="closeCustomThemeEditor()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="settings-container">
+          <p style="margin-bottom: 20px; opacity: 0.8;">Customize your theme by changing the colors below. Click "Apply Theme" to preview, or "Reset" to restore defaults.</p>
+          
+          <div class="theme-editor-grid">
+            <div class="color-input-group">
+              <label><i class="fas fa-fill-drip"></i> Background Gradient Start</label>
+              <input type="color" id="bgGradientStart" value="#0d3d2e">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-fill-drip"></i> Background Gradient Mid</label>
+              <input type="color" id="bgGradientMid" value="#1a5943">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-fill-drip"></i> Background Gradient End</label>
+              <input type="color" id="bgGradientEnd" value="#0f4d38">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-square"></i> Sidebar Background</label>
+              <input type="color" id="sidebarBg" value="#0a1e14">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-square"></i> Card Background</label>
+              <input type="color" id="cardBg" value="#0f281e">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-square"></i> Card Hover</label>
+              <input type="color" id="cardHoverBg" value="#143223">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-font"></i> Primary Text</label>
+              <input type="color" id="textPrimary" value="#e8f5e9">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-font"></i> Secondary Text</label>
+              <input type="color" id="textSecondary" value="#c8ffd2">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-star"></i> Accent Color</label>
+              <input type="color" id="accentGreen" value="#2d8659">
+            </div>
+            <div class="color-input-group">
+              <label><i class="fas fa-star"></i> Accent Hover</label>
+              <input type="color" id="accentGreenHover" value="#3aa66f">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn" onclick="applyCustomTheme()" style="flex: 1;">
+              <i class="fas fa-check"></i> Apply Theme
+            </button>
+            <button class="btn btn-secondary" onclick="resetCustomTheme()" style="flex: 1;">
+              <i class="fas fa-undo"></i> Reset to Default
+            </button>
+            <button class="btn" onclick="exportCustomTheme()">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn" onclick="importCustomTheme()">
+              <i class="fas fa-upload"></i> Import
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -392,14 +596,6 @@
           title="Like"
         >
           <i class="far fa-heart" id="currentLikeIcon"></i>
-        </button>
-        <button
-          class="control-btn download-btn"
-          id="currentDownloadBtn"
-          onclick="downloadCurrentTrack()"
-          title="Download"
-        >
-          <i class="fas fa-download" id="currentDownloadIcon"></i>
         </button>
       </div>
 
@@ -515,6 +711,37 @@
             Cancel
           </button>
           <button class="btn" onclick="createPlaylist()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Name Modal -->
+    <div id="changeNameModal" class="modal" style="display: none;" onclick="closeChangeNameModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
+        <div class="modal-header">
+          <h2><i class="fas fa-user"></i> Change Name</h2>
+          <button class="modal-close" onclick="closeChangeNameModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label for="newUserName" style="display: block; margin-bottom: 10px; font-weight: 600;">
+            Enter your new name:
+          </label>
+          <input
+            type="text"
+            id="newUserName"
+            class="input-field"
+            placeholder="Your name"
+            maxlength="30"
+            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); font-size: 14px; box-sizing: border-box;"
+          />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeChangeNameModal()">
+            Cancel
+          </button>
+          <button class="btn" onclick="saveNewUserName()">Save</button>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 {
   "name": "flowify-beta",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A free music player focused on privacy — no account, no tracking.",
   "author": "Flowify Team",
   "license": "MIT",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "discord-rich-presence": "^0.0.8",
+    "discord-rpc": "^4.0.1",
     "electron-updater": "^6.6.2"
   },
   "devDependencies": {
@@ -35,10 +36,11 @@
     "directories": {
       "output": "dist"
     },
-    "files": [
+      "files": [
       "main.js",
       "index.html",
       "script.js",
+      "translations.js",
       "styles.css",
       "preload.js",
       "package.json",

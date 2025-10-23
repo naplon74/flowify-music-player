@@ -2,7 +2,7 @@ const { app, BrowserWindow, session, ipcMain, Tray, Menu } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const https = require('https')
-const DiscordRichPresence = require('discord-rich-presence')
+const DiscordRPC = require('discord-rpc')
 const { autoUpdater } = require('electron-updater')
 
 // Auto-updater configuration
@@ -106,56 +106,51 @@ let rpc = null;
 let rpcConnected = false;
 
 // Function to connect to Discord (auto-detects Stable, PTB, Canary)
-function connectDiscord() {
+async function connectDiscord() {
   try {
-    // Suppress unhandled rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      if (reason && reason.message && reason.message.includes('connection closed')) {
-        // Discord RPC connection error - ignore it
-        return;
-      }
-    });
+    rpc = new DiscordRPC.Client({ transport: 'ipc' });
 
-    rpc = DiscordRichPresence(clientId);
+    rpc.on('ready', () => {
+      rpcConnected = true;
+      debugLog('Discord Rich Presence initialized', 'info');
+      debugLog('-----------------------------------------------------------', 'info');
+      debugLog('If RPC doesn\'t show up, check these Discord settings:', 'info');
+      debugLog('1. Settings > Activity Privacy > "Display current activity" = ON', 'info');
+      debugLog('2. Settings > Activity Privacy > "Share detected activities" = ON', 'info');
+      debugLog('3. Make sure you\'re looking at your own profile/status', 'info');
+      debugLog('-----------------------------------------------------------', 'info');
 
-    // Add error handler
-    if (rpc && rpc.on) {
-      rpc.on('error', (err) => {
-        debugLog('Discord RPC error (will be disabled): ' + err.message, 'error');
-        rpcConnected = false;
-      });
-    }
-
-    rpcConnected = true;
-    debugLog('Discord Rich Presence initialized', 'info');
-    debugLog('-----------------------------------------------------------', 'info');
-    debugLog('If RPC doesn\'t show up, check these Discord settings:', 'info');
-    debugLog('1. Settings > Activity Privacy > "Display current activity" = ON', 'info');
-    debugLog('2. Settings > Activity Privacy > "Share detected activities" = ON', 'info');
-    debugLog('3. Make sure you\'re looking at your own profile/status', 'info');
-    debugLog('-----------------------------------------------------------', 'info');
-
-    // Set initial presence with a small delay
-    setTimeout(() => {
-      try {
-        rpc.updatePresence({
-          details: 'Browsing music',
-          state: 'In main menu',
-          startTimestamp: Math.floor(Date.now() / 1000),
-          largeImageKey: 'music_icon',      // Your uploaded logo
-          largeImageText: 'Flowify Player - Beta',  // Shows on hover
-          instance: false,
-        });
+      // Set initial presence
+      rpc.setActivity({
+        details: 'Browsing music',
+        state: 'In main menu',
+        startTimestamp: Date.now(),
+        largeImageKey: 'music_icon',
+        largeImageText: 'Flowify Player - Beta',
+        smallImageKey: 'github',
+        smallImageText: 'github.com/naplon74/flowify-music-player',
+        instance: false,
+      }).then(() => {
         debugLog('✓ Discord Rich Presence is now active!', 'info');
         debugLog('✓ Check your Discord profile to see "Browsing music"', 'info');
-      } catch (presenceErr) {
-        debugLog('Could not set Discord presence: ' + presenceErr.message, 'error');
-        rpcConnected = false;
-      }
-    }, 1500);
+      }).catch(err => {
+        debugLog('Could not set Discord presence: ' + err.message, 'error');
+      });
+    });
+
+    rpc.on('error', (err) => {
+      debugLog('Discord RPC error: ' + err.message, 'error');
+      rpcConnected = false;
+    });
+
+    await rpc.login({ clientId }).catch(err => {
+      debugLog('Discord not detected. Rich Presence will be disabled.', 'warning');
+      rpc = null;
+      rpcConnected = false;
+    });
 
   } catch (err) {
-    debugLog('Discord not detected. Rich Presence will be disabled.', 'warning');
+    debugLog('Discord connection error: ' + err.message, 'warning');
     rpc = null;
     rpcConnected = false;
   }
@@ -314,47 +309,47 @@ ipcMain.on('update-discord-rpc', (event, data) => {
   // If data is empty/null, set default idle state instead of clearing
   if (!data || (data.details === '' && data.state === '')) {
     if (rpc && rpcConnected) {
-      try {
-        debugLog('Setting Discord RPC to idle state...', 'info');
-        // Set to idle state instead of empty values
-        rpc.updatePresence({
-          details: 'Browsing music',
-          state: 'Idle in main menu',
-          largeImageKey: 'music_icon',
-          largeImageText: 'Flowify Player - Beta',
-          instance: false,
-        });
+      debugLog('Setting Discord RPC to idle state...', 'info');
+      rpc.setActivity({
+        details: 'Browsing music',
+        state: 'Idle in main menu',
+        largeImageKey: 'music_icon',
+        largeImageText: 'Flowify Player - Beta',
+        smallImageKey: 'github',
+        smallImageText: 'github.com/naplon74/flowify-music-player',
+        instance: false,
+      }).then(() => {
         debugLog('Discord RPC set to idle state', 'info');
-      } catch (err) {
+      }).catch(err => {
         debugLog('Failed to set Discord RPC idle state: ' + err.message, 'error');
-      }
+        rpcConnected = false;
+      });
     }
     return;
   }
   
   if (rpc && rpcConnected && data) {
-    try {
-      const activity = {
-        details: (data.details && data.details.trim() !== '') ? data.details : 'Browsing music',
-        state: (data.state && data.state.trim() !== '') ? data.state : 'In main menu',
-        largeImageKey: 'music_icon',      // Your uploaded logo
-        largeImageText: 'Flowify Player - Beta',  // Shows on hover
-        instance: false,
-      };
-      
-      if (data.startTimestamp) {
-        // Convert milliseconds to seconds for Discord
-        activity.startTimestamp = Math.floor(data.startTimestamp / 1000);
-      } else {
-        activity.startTimestamp = Math.floor(Date.now() / 1000);
-      }
-      
-      debugLog('Updating Discord RPC: ' + activity.details + ' - ' + activity.state, 'info');
-      rpc.updatePresence(activity);
-    } catch (err) {
+    const activity = {
+      details: (data.details && data.details.trim() !== '') ? data.details : 'Browsing music',
+      state: (data.state && data.state.trim() !== '') ? data.state : 'In main menu',
+      largeImageKey: 'music_icon',
+      largeImageText: 'Flowify Player - Beta',
+      smallImageKey: 'github',
+      smallImageText: 'github.com/naplon74/flowify-music-player',
+      instance: false,
+    };
+    
+    if (data.startTimestamp) {
+      activity.startTimestamp = data.startTimestamp;
+    } else {
+      activity.startTimestamp = Date.now();
+    }
+    
+    debugLog('Updating Discord RPC: ' + activity.details + ' - ' + activity.state, 'info');
+    rpc.setActivity(activity).catch(err => {
       debugLog('Failed to update Discord RPC: ' + err.message, 'error');
       rpcConnected = false;
-    }
+    });
   }
 });
 
