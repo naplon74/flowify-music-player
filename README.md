@@ -183,7 +183,7 @@ Contributions are welcome! Here's how you can help:
 
 - Album artwork from **TIDAL Resources**
 - Icons from **[Font Awesome](https://fontawesome.com/)**
-- Built with ❤️ by the Flowify Team
+- Built with ❤️ by Naplon_
 
 ---
 
@@ -216,6 +216,8 @@ Contributions are welcome! Here's how you can help:
 **Made with ❤️ for music lovers**
 
 ⭐ Star this repo if you like Flowify! ⭐
+
+**PlayTorrio and Jackett are intended for educational and legal use only. You are solely responsible for the content you access.**
 
 [Report Bug](https://github.com/naplon74/flowify-music-player/issues) • [Request Feature](https://github.com/naplon74/flowify-music-player/issues) • [Contribute](#-contributing)
 
