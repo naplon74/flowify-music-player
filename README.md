@@ -217,7 +217,7 @@ Contributions are welcome! Here's how you can help:
 
 ⭐ Star this repo if you like Flowify! ⭐
 
-**PlayTorrio and Jackett are intended for educational and legal use only. You are solely responsible for the content you access.**
+**Flowify is intended for educational and legal use only. You are solely responsible for the content you access.**
 
 [Report Bug](https://github.com/naplon74/flowify-music-player/issues) • [Request Feature](https://github.com/naplon74/flowify-music-player/issues) • [Contribute](#-contributing)
 
