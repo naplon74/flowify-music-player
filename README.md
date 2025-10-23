@@ -54,43 +54,6 @@
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js** 16+ ([Download](https://nodejs.org/))
-- **npm** (comes with Node.js)
-
-### Installation
-
-#### Option 1: Download Pre-built Release (Recommended)
-1. Go to [Releases](https://github.com/naplon74/flowify-music-player/releases)
-2. Download the latest installer for your platform:
-   - **Windows**: `Flowify-Setup-X.X.X.exe`
-   - **macOS**: `Flowify-X.X.X.dmg`
-   - **Linux**: `Flowify-X.X.X.AppImage` or `.deb`
-3. Run the installer and follow the prompts
-4. Launch Flowify and start listening!
-
-#### Option 2: Build from Source
-```bash
-# Clone the repository
-git clone https://github.com/naplon74/flowify-music-player.git
-cd flowify-music-player
-
-# Install dependencies
-npm install
-
-# Run in development mode
-npm start
-
-# Build for production
-npm run build:win   # Windows
-npm run build:mac   # macOS
-npm run build:linux # Linux
-```
-
----
-
 ## 🎮 Usage
 
 ### Basic Controls
@@ -218,39 +181,6 @@ Contributions are welcome! Here's how you can help:
 
 ---
 
-## 📝 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2025 Flowify Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## 🙏 Acknowledgments
-
-- Music streaming powered by **hifi.401658.xyz** API
 - Album artwork from **TIDAL Resources**
 - Icons from **[Font Awesome](https://fontawesome.com/)**
 - Built with ❤️ by the Flowify Team
@@ -261,7 +191,6 @@ SOFTWARE.
 
 - **Issues**: [GitHub Issues](https://github.com/naplon74/flowify-music-player/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/naplon74/flowify-music-player/discussions)
-- **Email**: [Contact](mailto:support@flowify.app) *(if applicable)*
 
 ---
 
