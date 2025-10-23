@@ -51,11 +51,14 @@
 
 ![Preview](assets/screenshots/screenshot1.png)
 <div align="center">
-**Setup page (For V0.02 and newer)**
+   
+   **Setup page (For V0.02 and newer)**
 </div>
+
 ![Preview](assets/screenshots/screenshot2.png)
 <div align="center">
-**Discord rpc**
+
+   **Discord rpc**
 </div>
 ---
 
