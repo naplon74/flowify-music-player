@@ -1,27 +1,34 @@
 {
-  
   "name": "flowify-beta",
-  "version": "1.0.0",
-  "description": "A free music player - focus on privacy, no account, no tracking.",
-  "license": "MIT",
+  "version": "0.0.1",
+  "description": "A free music player focused on privacy — no account, no tracking.",
   "author": "Flowify Team",
+  "license": "MIT",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux"
-  },
-  "devDependencies": {
-    "electron": "^38.3.0",
-    "electron-builder": "^24.13.3"
   },
   "dependencies": {
     "discord-rich-presence": "^0.0.8",
     "electron-updater": "^6.6.2"
   },
+  "devDependencies": {
+    "electron": "^38.3.0",
+    "electron-builder": "^22.14.13"
+  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "naplon74",
+      "repo": "flowify-music-player"
+    }
+  ],
   "build": {
     "appId": "com.flowify.musicplayer",
     "productName": "Flowify",
@@ -29,14 +36,21 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
-      "!dist",
-      "!.git",
-      "!*.md",
-      "!BUILD.md",
-      "!DISCORD_RPC_SETUP.md",
-      "!DOWNLOADS.md",
-      "!RPC_TROUBLESHOOTING.md"
+      "main.js",
+      "index.html",
+      "script.js",
+      "styles.css",
+      "preload.js",
+      "package.json",
+      "assets/**/*",
+      "renderer/**/*",
+      "build/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets"
+      }
     ],
     "asarUnpack": [
       "node_modules/discord-rich-presence/**/*"
@@ -56,20 +70,28 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Flowify"
     },
     "mac": {
-      "target": "dmg",
       "icon": "assets/icon.icns",
-      "category": "public.app-category.music"
+      "category": "public.app-category.music",
+      "target": "dmg"
     },
     "linux": {
+      "icon": "assets/icon.png",
+      "category": "Audio",
       "target": [
         "AppImage",
         "deb"
-      ],
-      "icon": "assets/icon.png",
-      "category": "Audio"
+      ]
     }
   }
 }

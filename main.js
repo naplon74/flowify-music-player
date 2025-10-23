@@ -3,12 +3,102 @@ const path = require('path')
 const fs = require('fs')
 const https = require('https')
 const DiscordRichPresence = require('discord-rich-presence')
-const { listenerCount } = require('process')
 const { autoUpdater } = require('electron-updater')
 
 // Auto-updater configuration
 autoUpdater.autoDownload = false; // Don't auto-download, ask user first
 autoUpdater.autoInstallOnAppQuit = true;
+
+// Enable logging for debugging (optional, only if electron-log is available)
+try {
+  autoUpdater.logger = require('electron-log');
+  autoUpdater.logger.transports.file.level = 'info';
+} catch (e) {
+  // electron-log not available, use console
+  console.log('electron-log not available, using console logging');
+}
+
+console.log('Auto-updater initialized');
+console.log('App version:', app.getVersion());
+
+// Track whether we're doing a silent auto-check (on launch)
+let silentUpdateCheck = false;
+// Auto-updater IPC handlers
+ipcMain.on('check-for-updates', () => {
+  debugLog('Manual update check triggered', 'info');
+  // Ensure this is treated as a non-silent check
+  autoUpdater.checkForUpdates().catch(error => {
+    console.error('Update check error:', error);
+    debugLog('Update check failed: ' + error.message, 'error');
+    if (mainWindow) {
+      mainWindow.webContents.send('update-status', { status: 'error', message: error.message });
+    }
+  });
+});
+
+ipcMain.on('download-update', () => {
+  autoUpdater.downloadUpdate();
+});
+
+ipcMain.on('install-update', () => {
+  autoUpdater.quitAndInstall();
+});
+
+// Auto-updater events
+autoUpdater.on('checking-for-update', () => {
+  debugLog('Checking for updates...', 'info');
+  // During silent checks, don't notify the renderer
+  if (!silentUpdateCheck && mainWindow) {
+    mainWindow.webContents.send('update-status', { status: 'checking' });
+  }
+});
+
+autoUpdater.on('update-available', (info) => {
+  debugLog('Update available: v' + info.version, 'info');
+  if (mainWindow) {
+    mainWindow.webContents.send('update-status', {
+      status: 'available',
+      version: info.version,
+      releaseDate: info.releaseDate,
+      releaseNotes: info.releaseNotes
+    });
+  }
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  debugLog('App is up to date (v' + info.version + ')', 'info');
+  // Don't bother the user during silent checks
+  if (!silentUpdateCheck && mainWindow) {
+    mainWindow.webContents.send('update-status', { status: 'not-available' });
+  }
+});
+
+autoUpdater.on('error', (err) => {
+  debugLog('Update error: ' + err.message, 'error');
+  // Suppress error popups during silent checks
+  if (!silentUpdateCheck && mainWindow) {
+    mainWindow.webContents.send('update-status', { status: 'error', message: err.message });
+  }
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  debugLog('Download progress: ' + Math.round(progressObj.percent) + '%', 'info');
+  if (mainWindow) {
+    mainWindow.webContents.send('update-status', {
+      status: 'downloading',
+      percent: progressObj.percent,
+      transferred: progressObj.transferred,
+      total: progressObj.total
+    });
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  debugLog('Update downloaded. Will install on quit.', 'info');
+  if (mainWindow) {
+    mainWindow.webContents.send('update-status', { status: 'downloaded', version: info.version });
+  }
+});
 
 // Discord RPC setup
 const clientId = '1430189312678559764'; // You can replace with your own Discord App ID
@@ -25,9 +115,9 @@ function connectDiscord() {
         return;
       }
     });
-    
+
     rpc = DiscordRichPresence(clientId);
-    
+
     // Add error handler
     if (rpc && rpc.on) {
       rpc.on('error', (err) => {
@@ -35,7 +125,7 @@ function connectDiscord() {
         rpcConnected = false;
       });
     }
-    
+
     rpcConnected = true;
     debugLog('Discord Rich Presence initialized', 'info');
     debugLog('-----------------------------------------------------------', 'info');
@@ -44,7 +134,7 @@ function connectDiscord() {
     debugLog('2. Settings > Activity Privacy > "Share detected activities" = ON', 'info');
     debugLog('3. Make sure you\'re looking at your own profile/status', 'info');
     debugLog('-----------------------------------------------------------', 'info');
-    
+
     // Set initial presence with a small delay
     setTimeout(() => {
       try {
@@ -63,7 +153,7 @@ function connectDiscord() {
         rpcConnected = false;
       }
     }, 1500);
-  
+
   } catch (err) {
     debugLog('Discord not detected. Rich Presence will be disabled.', 'warning');
     rpc = null;
@@ -221,20 +311,22 @@ ipcMain.handle('download-file', async (event, { url, filename }) => {
 
 // Handle Discord RPC updates
 ipcMain.on('update-discord-rpc', (event, data) => {
-  // If data is empty/null, clear the RPC
+  // If data is empty/null, set default idle state instead of clearing
   if (!data || (data.details === '' && data.state === '')) {
     if (rpc && rpcConnected) {
       try {
-        debugLog('Clearing Discord RPC...', 'info');
-        // Clear presence by updating with empty data
+        debugLog('Setting Discord RPC to idle state...', 'info');
+        // Set to idle state instead of empty values
         rpc.updatePresence({
-          details: '',
-          state: '',
+          details: 'Browsing music',
+          state: 'Idle in main menu',
+          largeImageKey: 'music_icon',
+          largeImageText: 'Flowify Player - Beta',
           instance: false,
         });
-        debugLog('Discord RPC cleared', 'info');
+        debugLog('Discord RPC set to idle state', 'info');
       } catch (err) {
-        debugLog('Failed to clear Discord RPC: ' + err.message, 'error');
+        debugLog('Failed to set Discord RPC idle state: ' + err.message, 'error');
       }
     }
     return;
@@ -243,8 +335,8 @@ ipcMain.on('update-discord-rpc', (event, data) => {
   if (rpc && rpcConnected && data) {
     try {
       const activity = {
-        details: data.details || 'Browsing music',
-        state: data.state || 'In main menu',
+        details: (data.details && data.details.trim() !== '') ? data.details : 'Browsing music',
+        state: (data.state && data.state.trim() !== '') ? data.state : 'In main menu',
         largeImageKey: 'music_icon',      // Your uploaded logo
         largeImageText: 'Flowify Player - Beta',  // Shows on hover
         instance: false,
@@ -271,71 +363,7 @@ ipcMain.handle('get-downloads-dir', () => {
   return downloadsDir;
 });
 
-// Auto-updater IPC handlers
-ipcMain.on('check-for-updates', () => {
-  autoUpdater.checkForUpdates();
-});
-
-ipcMain.on('download-update', () => {
-  autoUpdater.downloadUpdate();
-});
-
-ipcMain.on('install-update', () => {
-  autoUpdater.quitAndInstall();
-});
-
-// Auto-updater events
-autoUpdater.on('checking-for-update', () => {
-  debugLog('Checking for updates...', 'info');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { status: 'checking' });
-  }
-});
-
-autoUpdater.on('update-available', (info) => {
-  debugLog('Update available: v' + info.version, 'info');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { 
-      status: 'available', 
-      version: info.version,
-      releaseDate: info.releaseDate,
-      releaseNotes: info.releaseNotes
-    });
-  }
-});
-
-autoUpdater.on('update-not-available', (info) => {
-  debugLog('App is up to date (v' + info.version + ')', 'info');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { status: 'not-available' });
-  }
-});
-
-autoUpdater.on('error', (err) => {
-  debugLog('Update error: ' + err.message, 'error');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { status: 'error', message: err.message });
-  }
-});
-
-autoUpdater.on('download-progress', (progressObj) => {
-  debugLog('Download progress: ' + Math.round(progressObj.percent) + '%', 'info');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { 
-      status: 'downloading', 
-      percent: progressObj.percent,
-      transferred: progressObj.transferred,
-      total: progressObj.total
-    });
-  }
-});
-
-autoUpdater.on('update-downloaded', (info) => {
-  debugLog('Update downloaded. Will install on quit.', 'info');
-  if (mainWindow) {
-    mainWindow.webContents.send('update-status', { status: 'downloaded', version: info.version });
-  }
-});
+// (Deduplicated) auto-updater handlers defined earlier
 
 app.whenReady().then(() => {
   createWindow()
@@ -343,7 +371,10 @@ app.whenReady().then(() => {
   
   // Check for updates after 3 seconds
   setTimeout(() => {
-    autoUpdater.checkForUpdates();
+    // Perform a silent auto-check on startup; only notify if update exists
+    silentUpdateCheck = true;
+    autoUpdater.checkForUpdates()
+      .finally(() => { silentUpdateCheck = false; });
   }, 3000);
   
   // Try to connect to Discord after window is created

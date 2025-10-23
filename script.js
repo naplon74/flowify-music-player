@@ -13,7 +13,7 @@ let currentTheme = localStorage.getItem('theme') || 'dark';
 let discordRPCEnabled = JSON.parse(localStorage.getItem('discordRPCEnabled') || 'true');
 let navigationHistory = [];
 let currentArtistId = null;
-let cachedVolume = parseFloat(localStorage.getItem('volume') || '0.7');
+let cachedVolume = parseFloat(localStorage.getItem('volume') || '0.3');
 let cachedProgress = parseFloat(localStorage.getItem('lastProgress') || '0');
 
 let player = null;
@@ -205,6 +205,17 @@ function showSection(sectionName, skipHistory = false) {
   // Show controls based on section
   if (sectionName === 'search') {
     if (searchBar) searchBar.style.display = 'flex';
+    // Clear search input and results when switching to search tab
+    const queryInput = document.getElementById('query');
+    if (queryInput) queryInput.value = '';
+    const resultsDiv = document.getElementById('results');
+    if (resultsDiv) resultsDiv.innerHTML = '';
+    const searchResultsTitle = document.getElementById('searchResultsTitle');
+    if (searchResultsTitle) searchResultsTitle.style.display = 'none';
+    const emptyDiv = document.getElementById('searchEmpty');
+    if (emptyDiv) emptyDiv.style.display = 'block';
+    const suggestionsSection = document.getElementById('suggestions');
+    if (suggestionsSection) suggestionsSection.style.display = 'block';
   } else if (sectionName === 'playlists') {
     if (playlistControls) playlistControls.style.display = 'block';
   }
@@ -796,6 +807,9 @@ function loadLikedSongs() {
       <button class="btn btn-small btn-secondary" onclick="toggleLike(${song.id}, ${JSON.stringify(song).replace(/"/g, '&quot;')})">
         <i class="fas fa-heart"></i>
       </button>
+      <button class="btn btn-small" title="Add to playlist" onclick="addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
+        <i class="fas fa-plus"></i>
+      </button>
       <button class="btn btn-small ${isDownloaded ? 'btn-secondary' : ''}" onclick="downloadTrackOffline(${song.id}, ${JSON.stringify(song).replace(/"/g, '&quot;')})">
         <i class="fas fa-${isDownloaded ? 'check' : 'download'}"></i>
       </button>
@@ -1120,17 +1134,8 @@ function viewPlaylist(playlistId) {
     tracksContainer.innerHTML = '<div class="empty-state"><h3>No songs in this playlist</h3><p>Add songs to get started</p></div>';
   } else {
     playlist.songs.forEach((track, index) => {
-      const card = createTrackCard(track);
-      // Add remove button to each track
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'btn btn-small btn-secondary';
-      removeBtn.innerHTML = '<i class="fas fa-times"></i> Remove';
-      removeBtn.onclick = (e) => {
-        e.stopPropagation();
-        removeFromPlaylist(playlistId, track.id);
-      };
-      card.querySelector('.track-actions').appendChild(removeBtn);
-      tracksContainer.appendChild(card);
+      const row = createPlaylistRow(track, index, playlistId);
+      tracksContainer.appendChild(row);
     });
   }
   
@@ -1166,6 +1171,52 @@ function deleteCurrentPlaylist() {
 function backToPlaylists() {
   showSection('playlists');
   currentViewingPlaylist = null;
+}
+
+// Edit playlist: show modal pre-filled with current values
+function showEditPlaylistModal() {
+  if (!currentViewingPlaylist) return;
+  const playlist = playlists.find(p => p.id === currentViewingPlaylist);
+  if (!playlist) return;
+  const modal = document.getElementById('editPlaylistModal');
+  const nameInput = document.getElementById('editPlaylistName');
+  const descInput = document.getElementById('editPlaylistDescription');
+  if (nameInput) nameInput.value = playlist.name || '';
+  if (descInput) descInput.value = playlist.description || '';
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeEditPlaylistModal(event) {
+  const modal = document.getElementById('editPlaylistModal');
+  if (!modal) return;
+  if (!event || event.target === modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function applyEditPlaylist() {
+  if (!currentViewingPlaylist) return;
+  const playlist = playlists.find(p => p.id === currentViewingPlaylist);
+  if (!playlist) return;
+  const nameInput = document.getElementById('editPlaylistName');
+  const descInput = document.getElementById('editPlaylistDescription');
+  const newName = (nameInput?.value || '').trim();
+  const newDesc = (descInput?.value || '').trim();
+  if (newName.length === 0) {
+    alert('Please enter a playlist name.');
+    return;
+  }
+  playlist.name = newName;
+  playlist.description = newDesc;
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  // Update header immediately
+  const nameEl = document.getElementById('playlistDetailName');
+  const descEl = document.getElementById('playlistDetailDesc');
+  if (nameEl) nameEl.textContent = playlist.name;
+  if (descEl) descEl.textContent = playlist.description || 'No description';
+  closeEditPlaylistModal();
+  // Refresh list counts if needed
+  loadPlaylists();
 }
 
 function playPlaylist(playlistId) {
@@ -1238,10 +1289,10 @@ function toggleDiscordRPC(enabled) {
         });
       }
     } else {
-      // Clear Discord RPC
+      // Set Discord RPC to idle state
       window.electronAPI.updateDiscordRPC({
-        details: '',
-        state: ''
+        details: 'Browsing music',
+        state: 'Idle in main menu'
       });
     }
   }
@@ -1386,12 +1437,47 @@ async function searchArtist(artistName) {
     const searchData = await searchRes.json();
     
     if (searchData.items && searchData.items.length > 0) {
-      const firstTrack = searchData.items[0];
+      // Filter tracks by exact artist name match (case-insensitive)
+      const filteredTracks = searchData.items.filter(item => 
+        item.artist.name.toLowerCase() === artistName.toLowerCase()
+      );
+      
+      if (filteredTracks.length === 0) {
+        // If no exact match, try to find tracks by the artist
+        const partialMatch = searchData.items.filter(item => 
+          item.artist.name.toLowerCase().includes(artistName.toLowerCase())
+        );
+        
+        if (partialMatch.length === 0) {
+          if (artistTracks) {
+            artistTracks.innerHTML = '<div class="empty-state"><h3>Artist not found</h3><p>Try searching for a different artist</p></div>';
+          }
+          return;
+        }
+        
+        filteredTracks.push(...partialMatch);
+      }
+      
+      const firstTrack = filteredTracks[0];
       const displayArtistName = firstTrack.artist.name;
       currentArtistId = firstTrack.artist.id;
       
+      // Get artist image from album cover
+      let artistImageUrl = '';
+      if (firstTrack.album && firstTrack.album.cover) {
+        artistImageUrl = `https://resources.tidal.com/images/${firstTrack.album.cover.replace(/-/g, '/')}/640x640.jpg`;
+      }
+      
       // Update artist header
       if (artistHeader) {
+        const artistImageEl = document.getElementById('artistImage');
+        if (artistImageEl) {
+          artistImageEl.src = artistImageUrl;
+          artistImageEl.alt = displayArtistName;
+          artistImageEl.onerror = function() {
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iMTAwIiB5PSIxMDAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmb250LXNpemU9IjYwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+4pmrPC90ZXh0Pjwvc3ZnPg==';
+          };
+        }
         document.getElementById('artistName').textContent = displayArtistName;
         document.getElementById('artistBio').textContent = `Top tracks by ${displayArtistName}`;
         artistHeader.style.display = 'flex';
@@ -1402,8 +1488,6 @@ async function searchArtist(artistName) {
         navbarTitle.innerHTML = `<i class="fas fa-user-music"></i> ${displayArtistName}`;
       }
       
-      // Filter tracks by artist
-      const filteredTracks = searchData.items.filter(item => item.artist.name === displayArtistName);
       displayArtistTracks(filteredTracks);
     } else {
       if (artistTracks) {
@@ -1573,4 +1657,42 @@ function installUpdate() {
       window.electronAPI.installUpdate();
     }
   }
+}
+
+// Create a compact horizontal row for playlist view
+function createPlaylistRow(track, index, playlistId) {
+  const item = document.createElement('div');
+  item.className = 'playlist-item';
+  
+  let imageUrl = '';
+  if (track.album && track.album.cover) {
+    imageUrl = `https://resources.tidal.com/images/${track.album.cover.replace(/-/g, '/')}/320x320.jpg`;
+  }
+  
+  const isDownloaded = downloads.some(d => d.id === track.id);
+  const isLiked = likedSongs.some(s => s.id === track.id);
+  
+  item.innerHTML = `
+    <div class="playlist-number">${index + 1}</div>
+    <img src="${imageUrl}" width="72" height="72" style="border-radius: 10px; background: #444; object-fit: cover;" 
+         onerror="this.style.display='none';" alt="">
+    <div class="playlist-info" style="min-width:0;">
+      <div class="playlist-title" style="font-weight:600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title}</div>
+      <div class="playlist-artist" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.artist?.name || ''}</div>
+    </div>
+    <button class="btn btn-small" onclick='playTrack(${track.id}, ${JSON.stringify(track).replace(/"/g, '&quot;')})'>
+      <i class="fas fa-play"></i>
+    </button>
+    <button class="btn btn-small ${isLiked ? 'btn-secondary' : ''}" onclick='toggleLike(${track.id}, ${JSON.stringify(track).replace(/"/g, '&quot;')})'>
+      <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+    </button>
+    <button class="btn btn-small ${isDownloaded ? 'btn-secondary' : ''}" onclick='downloadTrackOffline(${track.id}, ${JSON.stringify(track).replace(/"/g, '&quot;')})'>
+      <i class="fas fa-${isDownloaded ? 'check' : 'download'}"></i>
+    </button>
+    <button class="btn btn-small" onclick='removeFromPlaylist(${playlistId}, ${track.id})'>
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  return item;
 }

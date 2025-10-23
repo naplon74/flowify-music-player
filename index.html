@@ -183,6 +183,9 @@
                 <button class="btn" onclick="playCurrentPlaylistView()">
                   <i class="fas fa-play"></i> Play All
                 </button>
+                <button class="btn" onclick="showEditPlaylistModal()">
+                  <i class="fas fa-pen"></i> Edit
+                </button>
                 <button class="btn btn-secondary" onclick="deleteCurrentPlaylist()">
                   <i class="fas fa-trash"></i> Delete
                 </button>
@@ -230,7 +233,7 @@
               <div class="info-card">
                 <h3><i class="fas fa-sync-alt"></i> Updates</h3>
                 <div id="updateStatus" class="update-status">
-                  <p>Current Version: <strong>v1.0.0</strong></p>
+                  <p>Current Version: <strong>v0.0.1</strong></p>
                   <button class="btn" onclick="checkForUpdates()">
                     <i class="fas fa-download"></i> Check for Updates
                   </button>
@@ -242,7 +245,7 @@
                 <h3><i class="fas fa-list-alt"></i> Changelog</h3>
                 <div class="changelog">
                   <div class="changelog-entry">
-                    <div class="changelog-version">v1.0.0 - Beta</div>
+                    <div class="changelog-version">v0.0.1 - Beta</div>
                     <ul>
                       <li><i class="fas fa-plus-circle"></i> Auto-update system with GitHub releases</li>
                       <li><i class="fas fa-plus-circle"></i> System tray support - minimize to tray</li>
@@ -359,12 +362,12 @@
               <i class="fas fa-trash"></i> Clear Downloads
             </button>
           </div>
-          <h3>About</h3>
+          <h3 style="text-align: center;">About</h3>
           <p>
             Flowify is a free music player, we focus on privacy, no account, no
             tracking, no bullshit, just music.
           </p>
-          <p>Version 1.0.0 - Beta</p>
+          <p>Version 0.0.1 - Beta</p>
         </div>
       </div>
     </div>
@@ -455,7 +458,7 @@
           class="volume-slider"
           min="0"
           max="100"
-          value="70"
+          value="30"
           oninput="setVolume(this.value)"
         />
       </div>
@@ -512,6 +515,30 @@
             Cancel
           </button>
           <button class="btn" onclick="createPlaylist()">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Playlist Modal -->
+    <div id="editPlaylistModal" class="modal" onclick="closeEditPlaylistModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h2><i class="fas fa-pen"></i> Edit Playlist</h2>
+          <button class="modal-close" onclick="closeEditPlaylistModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="form-group">
+          <label for="editPlaylistName">Playlist Name</label>
+          <input type="text" id="editPlaylistName" placeholder="Enter playlist name..." />
+        </div>
+        <div class="form-group">
+          <label for="editPlaylistDescription">Description (Optional)</label>
+          <input type="text" id="editPlaylistDescription" placeholder="Enter description..." />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeEditPlaylistModal()">Cancel</button>
+          <button class="btn" onclick="applyEditPlaylist()">Save</button>
         </div>
       </div>
     </div>

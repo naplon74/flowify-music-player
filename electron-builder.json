@@ -1,0 +1,25 @@
+{
+  "appId": "com.flowify.musicplayer",
+  "productName": "Flowify",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "**/*",
+    "!dist",
+    "!.git",
+    "!*.md"
+  ],
+  "asarUnpack": [
+    "node_modules/discord-rich-presence/**/*"
+  ],
+  "win": {
+    "target": "dir",
+    "sign": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "publish": null
+}
