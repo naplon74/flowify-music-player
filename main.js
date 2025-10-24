@@ -189,17 +189,28 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      devTools: false,
+      devTools: false, // Disable DevTools
       webSecurity: false,
       allowRunningInsecureContent: true,
       experimentalFeatures: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'js', 'preload.js')
     }
   })
 
   // Disable CORS for all requests
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+    // Add specific headers for YouTube/Google domains
+    if (details.url.includes('googlevideo.com') || details.url.includes('youtube.com')) {
+      details.requestHeaders['User-Agent'] = 'com.google.android.apps.youtube.vr.oculus/1.61.48 (Linux; U; Android 11) gzip';
+      
+      // Remove problematic headers
+      delete details.requestHeaders['Range'];
+      
+      console.log('[YouTube Request] URL:', details.url.substring(0, 150));
+    } else {
+      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+    }
+    
     callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 
@@ -210,17 +221,21 @@ const createWindow = () => {
         'Access-Control-Allow-Origin': ['*'],
         'Access-Control-Allow-Methods': ['GET, POST, PUT, DELETE, OPTIONS'],
         'Access-Control-Allow-Headers': ['*'],
+        'Access-Control-Allow-Credentials': ['true'],
       },
     });
   });
 
   mainWindow.loadFile('index.html')
   
-  // Remove menu bar completely and disable dev tools
+  // Remove menu bar completely and disable DevTools
   mainWindow.setMenuBarVisibility(false)
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    // Disable F12 and Ctrl+Shift+I
-    if (input.key === 'F12' || (input.control && input.shift && input.key === 'I')) {
+    // Block all DevTools shortcuts
+    if (input.key === 'F12' || 
+        (input.control && input.shift && input.key === 'I') ||
+        (input.control && input.shift && input.key === 'J') ||
+        (input.control && input.shift && input.key === 'C')) {
       event.preventDefault()
     }
   })

@@ -1,0 +1,482 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *                    FLOWIFY CUSTOM THEME TEMPLATE
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * This file contains all customizable CSS variables and styles for Flowify.
+ * You can modify colors, fonts, sizes, and effects to make Flowify your own!
+ * 
+ * HOW TO USE:
+ * 1. Copy this file to your Flowify installation folder
+ * 2. Rename it to "custom-theme.css"
+ * 3. Modify any values you want to change
+ * 4. Restart Flowify to see your changes
+ * 
+ * TIP: Keep a backup of this file before making major changes!
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DARK THEME COLORS
+   ═══════════════════════════════════════════════════════════════════════
+   These colors are used when dark mode is active.
+   Modify these to create your own dark color scheme.
+*/
+:root {
+  /* Background Gradients */
+  --bg-gradient-start: #0d3d2e;    /* Top-left gradient color */
+  --bg-gradient-mid: #1a5943;      /* Middle gradient color */
+  --bg-gradient-end: #0f4d38;      /* Bottom-right gradient color */
+  
+  /* Panel & Card Colors */
+  --sidebar-bg: rgba(10, 30, 20, 0.7);        /* Sidebar background (with transparency) */
+  --card-bg: rgba(15, 40, 30, 0.7);           /* Card/tile background */
+  --card-hover-bg: rgba(20, 50, 35, 0.8);     /* Card background on hover */
+  
+  /* Border & Dividers */
+  --border-color: rgba(150, 255, 200, 0.1);   /* Border and separator lines */
+  
+  /* Text Colors */
+  --text-primary: #e8f5e9;                    /* Main text color (brightest) */
+  --text-secondary: rgba(200, 255, 210, 0.8); /* Secondary text (slightly dimmer) */
+  --text-tertiary: rgba(180, 255, 200, 0.6);  /* Tertiary text (even dimmer) */
+  
+  /* Input & Form Elements */
+  --input-bg: rgba(150, 255, 200, 0.08);      /* Input field backgrounds */
+  
+  /* Player Bar */
+  --player-bg: rgba(10, 30, 20, 0.95);        /* Bottom player bar background */
+  
+  /* Accent Colors (Buttons, Links, Active States) */
+  --accent-green: #2d8659;                    /* Primary accent color */
+  --accent-green-hover: #3aa66f;              /* Accent color on hover */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT THEME COLORS
+   ═══════════════════════════════════════════════════════════════════════
+   These colors are used when light mode is active.
+   Customize to create your own light color scheme.
+*/
+body[data-theme="light"] {
+  /* Background Gradients */
+  --bg-gradient-start: #e8f5e9;    /* Top-left gradient color */
+  --bg-gradient-mid: #c8e6c9;      /* Middle gradient color */
+  --bg-gradient-end: #a5d6a7;      /* Bottom-right gradient color */
+  
+  /* Panel & Card Colors */
+  --sidebar-bg: rgba(255, 255, 255, 0.9);     /* Sidebar background */
+  --card-bg: rgba(255, 255, 255, 0.8);        /* Card/tile background */
+  --card-hover-bg: rgba(245, 255, 245, 0.95); /* Card background on hover */
+  
+  /* Border & Dividers */
+  --border-color: rgba(45, 134, 89, 0.15);    /* Border and separator lines */
+  
+  /* Text Colors */
+  --text-primary: #1b4332;                    /* Main text color (darkest) */
+  --text-secondary: rgba(27, 67, 50, 0.8);    /* Secondary text */
+  --text-tertiary: rgba(45, 134, 89, 0.6);    /* Tertiary text */
+  
+  /* Input & Form Elements */
+  --input-bg: rgba(45, 134, 89, 0.05);        /* Input field backgrounds */
+  
+  /* Player Bar */
+  --player-bg: rgba(255, 255, 255, 0.95);     /* Bottom player bar background */
+  
+  /* Accent Colors */
+  --accent-green: #2d8659;                    /* Primary accent color */
+  --accent-green-hover: #3aa66f;              /* Accent color on hover */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════════════════════════════════
+   Customize fonts, sizes, and text styles.
+*/
+
+/* Main Font Family */
+body {
+  font-family: 'Source Sans 3', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Change to your preferred font, e.g., 'Roboto', 'Inter', 'Poppins' */
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Heading Sizes */
+h1 { font-size: 2.5rem; font-weight: 700; }
+h2 { font-size: 2rem; font-weight: 600; }
+h3 { font-size: 1.5rem; font-weight: 600; }
+
+/* Section Titles */
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  /* Modify to change the look of section headers */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════════════
+   Customize button appearance and hover effects.
+*/
+
+.btn {
+  background: var(--accent-green);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  /* Add custom button styling here */
+}
+
+.btn:hover {
+  background: var(--accent-green-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 134, 89, 0.3);
+}
+
+/* Secondary Buttons (outline style) */
+.btn-secondary {
+  background: transparent;
+  border: 2px solid var(--accent-green);
+  color: var(--accent-green);
+}
+
+.btn-secondary:hover {
+  background: var(--accent-green);
+  color: white;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CARDS & TILES
+   ═══════════════════════════════════════════════════════════════════════
+   Customize the appearance of song cards, album tiles, and other cards.
+*/
+
+.track-item, .track-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 15px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  /* Modify card appearance here */
+}
+
+.track-item:hover, .track-card:hover {
+  background: var(--card-hover-bg);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Album Cover Images */
+.track-image {
+  border-radius: 10px;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  /* Modify image styling (size, border-radius, etc.) */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCROLLBAR CUSTOMIZATION
+   ═══════════════════════════════════════════════════════════════════════
+   Change the look of scrollbars throughout the app.
+*/
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  /* Change scrollbar size */
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  /* Change scrollbar track color */
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-green);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  /* Change scrollbar thumb color */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green-hover);
+  background-clip: content-box;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PLAYER BAR
+   ═══════════════════════════════════════════════════════════════════════
+   Customize the music player at the bottom of the screen.
+*/
+
+.player {
+  background: var(--player-bg);
+  border-top: 1px solid var(--border-color);
+  padding: 15px 20px;
+  backdrop-filter: blur(20px);
+  /* Modify player bar styling */
+}
+
+/* Progress Bar */
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent-green);
+  transition: width 0.1s linear;
+}
+
+/* Volume Slider */
+.volume-slider {
+  accent-color: var(--accent-green);
+  /* Change volume slider color */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════════════════════════════════
+   Customize the navigation sidebar on the left.
+*/
+
+.sidebar {
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--border-color);
+  /* Modify sidebar styling */
+}
+
+/* Navigation Items */
+.nav-item {
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  /* Customize nav item appearance */
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active {
+  background: var(--accent-green);
+  color: white;
+  font-weight: 600;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════
+   Control animation speeds and effects.
+*/
+
+/* Global Animation Speed */
+* {
+  transition-duration: 0.3s;
+  /* Change to make all animations faster (0.1s) or slower (0.5s) */
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale-up Animation (for cards) */
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NOTIFICATIONS
+   ═══════════════════════════════════════════════════════════════════════
+   Customize the update notifications that appear in the corner.
+*/
+
+.app-notification {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Modify notification styling */
+}
+
+/* Notification Colors */
+.notification-info .notification-icon {
+  background: rgba(45, 134, 89, 0.15);
+  color: var(--accent-green);
+}
+
+.notification-success .notification-icon {
+  background: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.notification-warning .notification-icon {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+}
+
+.notification-error .notification-icon {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MODAL DIALOGS
+   ═══════════════════════════════════════════════════════════════════════
+   Customize popup windows and dialogs.
+*/
+
+.modal {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  /* Change modal overlay darkness */
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  /* Customize modal window styling */
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SEARCH BAR
+   ═══════════════════════════════════════════════════════════════════════
+   Customize the search input field.
+*/
+
+.search-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 20px;
+  color: var(--text-primary);
+  font-size: 16px;
+  /* Modify search bar appearance */
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(45, 134, 89, 0.1);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CUSTOM THEME EXAMPLES
+   ═══════════════════════════════════════════════════════════════════════
+   Below are some pre-made color schemes you can use.
+   Uncomment one to apply it, or use them as inspiration!
+*/
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXAMPLE 1: Blue Ocean Theme
+   ─────────────────────────────────────────────────────────────────────
+:root {
+  --bg-gradient-start: #0a1929;
+  --bg-gradient-mid: #1a365d;
+  --bg-gradient-end: #0f2744;
+  --accent-green: #2196F3;
+  --accent-green-hover: #42A5F5;
+}
+*/
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXAMPLE 2: Purple Nights Theme
+   ─────────────────────────────────────────────────────────────────────
+:root {
+  --bg-gradient-start: #1a0033;
+  --bg-gradient-mid: #2d004d;
+  --bg-gradient-end: #1f0038;
+  --accent-green: #9c27b0;
+  --accent-green-hover: #ba68c8;
+}
+*/
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXAMPLE 3: Sunset Orange Theme
+   ─────────────────────────────────────────────────────────────────────
+:root {
+  --bg-gradient-start: #1a0f00;
+  --bg-gradient-mid: #331a00;
+  --bg-gradient-end: #4d2600;
+  --accent-green: #ff6f00;
+  --accent-green-hover: #ff8f00;
+}
+*/
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXAMPLE 4: Midnight Dark Theme
+   ─────────────────────────────────────────────────────────────────────
+:root {
+  --bg-gradient-start: #000000;
+  --bg-gradient-mid: #0d0d0d;
+  --bg-gradient-end: #1a1a1a;
+  --accent-green: #00ff00;
+  --accent-green-hover: #33ff33;
+}
+*/
+
+/* ─────────────────────────────────────────────────────────────────────
+   EXAMPLE 5: Cherry Red Theme
+   ─────────────────────────────────────────────────────────────────────
+:root {
+  --bg-gradient-start: #1a0000;
+  --bg-gradient-mid: #330000;
+  --bg-gradient-end: #260000;
+  --accent-green: #f44336;
+  --accent-green-hover: #e57373;
+}
+*/
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADVANCED CUSTOMIZATION
+   ═══════════════════════════════════════════════════════════════════════
+   For advanced users: Add your own custom CSS below!
+*/
+
+/* Your custom styles here... */

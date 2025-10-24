@@ -13,6 +13,8 @@
   "asarUnpack": [
     "node_modules/discord-rich-presence/**/*"
   ],
+  "asar": true,
+  "compression": "maximum",
   "win": {
     "target": "dir",
     "sign": false

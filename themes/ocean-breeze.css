@@ -1,0 +1,52 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *                  FLOWIFY THEME: OCEAN BREEZE
+ * ═══════════════════════════════════════════════════════════════════════
+ * A calming blue theme inspired by the ocean
+ * 
+ * TO USE THIS THEME:
+ * 1. Rename this file to "custom-theme.css"
+ * 2. Place it in your Flowify installation folder
+ * 3. Restart Flowify
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+/* Ocean Blue Colors */
+:root {
+  --bg-gradient-start: #0a1929;
+  --bg-gradient-mid: #1a365d;
+  --bg-gradient-end: #0f2744;
+  
+  --sidebar-bg: rgba(10, 25, 41, 0.8);
+  --card-bg: rgba(15, 39, 68, 0.7);
+  --card-hover-bg: rgba(26, 54, 93, 0.85);
+  
+  --border-color: rgba(33, 150, 243, 0.2);
+  
+  --text-primary: #e3f2fd;
+  --text-secondary: rgba(227, 242, 253, 0.8);
+  --text-tertiary: rgba(100, 181, 246, 0.6);
+  
+  --input-bg: rgba(33, 150, 243, 0.08);
+  --player-bg: rgba(10, 25, 41, 0.95);
+  
+  --accent-green: #2196F3;
+  --accent-green-hover: #42A5F5;
+}
+
+/* Smooth water-like transitions */
+* {
+  transition-duration: 0.4s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gentle wave effect on hover */
+.track-item:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(33, 150, 243, 0.3);
+}
+
+/* Ocean gradient on progress bar */
+.progress-fill {
+  background: linear-gradient(90deg, #1976D2, #2196F3, #42A5F5);
+}

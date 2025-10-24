@@ -1,0 +1,73 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *                  FLOWIFY THEME: CHERRY BLOSSOM
+ * ═══════════════════════════════════════════════════════════════════════
+ * A soft pink theme with elegant Japanese-inspired aesthetics
+ * 
+ * TO USE THIS THEME:
+ * 1. Rename this file to "custom-theme.css"
+ * 2. Place it in your Flowify installation folder
+ * 3. Restart Flowify
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
+/* Soft Pink Light Theme */
+body[data-theme="light"] {
+  --bg-gradient-start: #fce4ec;
+  --bg-gradient-mid: #f8bbd0;
+  --bg-gradient-end: #f48fb1;
+  
+  --sidebar-bg: rgba(255, 255, 255, 0.9);
+  --card-bg: rgba(255, 240, 245, 0.85);
+  --card-hover-bg: rgba(255, 230, 240, 0.95);
+  
+  --border-color: rgba(233, 30, 99, 0.2);
+  
+  --text-primary: #880e4f;
+  --text-secondary: rgba(136, 14, 79, 0.8);
+  --text-tertiary: rgba(194, 24, 91, 0.6);
+  
+  --input-bg: rgba(233, 30, 99, 0.05);
+  --player-bg: rgba(255, 255, 255, 0.95);
+  
+  --accent-green: #e91e63;
+  --accent-green-hover: #f06292;
+}
+
+/* Dark Cherry Theme */
+:root {
+  --bg-gradient-start: #1a0009;
+  --bg-gradient-mid: #330014;
+  --bg-gradient-end: #26000f;
+  
+  --sidebar-bg: rgba(26, 0, 9, 0.85);
+  --card-bg: rgba(51, 0, 20, 0.7);
+  --card-hover-bg: rgba(68, 0, 27, 0.85);
+  
+  --border-color: rgba(233, 30, 99, 0.2);
+  
+  --text-primary: #fce4ec;
+  --text-secondary: rgba(252, 228, 236, 0.8);
+  --text-tertiary: rgba(240, 111, 146, 0.6);
+  
+  --input-bg: rgba(233, 30, 99, 0.08);
+  --player-bg: rgba(26, 0, 9, 0.95);
+  
+  --accent-green: #e91e63;
+  --accent-green-hover: #f06292;
+}
+
+/* Elegant transitions */
+* {
+  transition-duration: 0.35s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Soft glow on hover */
+.btn:hover {
+  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3);
+}
+
+.track-item:hover {
+  box-shadow: 0 8px 30px rgba(233, 30, 99, 0.2);
+}

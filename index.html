@@ -7,8 +7,9 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="translations.js"></script>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/custom-theme.css" />
+    <script src="js/translations.js"></script>
   </head>
   <body data-theme="dark">
     <!-- Welcome/Onboarding Screen -->
@@ -63,7 +64,8 @@
               maxlength="30"
               autocomplete="off"
               spellcheck="false"
-              tabindex="0"
+              tabindex="1"
+              style="pointer-events: auto !important; -webkit-app-region: no-drag !important; z-index: 99999 !important; position: relative !important;"
             />
           </div>
           
@@ -241,12 +243,28 @@
             <div class="settings-grid">
               <div class="setting-item">
                 <div class="setting-info">
-                  <h3><i class="fas fa-adjust"></i> <span data-i18n="theme">Theme</span></h3>
-                  <p data-i18n="themeDesc">Choose light or dark mode</p>
+                  <h3><i class="fas fa-palette"></i> Theme Presets</h3>
+                  <p>Choose from pre-made themes or create your own</p>
                 </div>
-                <div style="display:flex; gap:10px;">
-                  <button class="btn" id="custThemeDark" onclick="setTheme('dark')">Dark</button>
-                  <button class="btn" id="custThemeLight" onclick="setTheme('light')">Light</button>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <select id="themePresetSelector" class="theme-selector" onchange="applyThemePreset(this.value)">
+                    <option value="default">🌲 Default (Green Forest)</option>
+                    <option value="cyberpunk">🌃 Cyberpunk Neon</option>
+                    <option value="ocean">🌊 Ocean Breeze</option>
+                    <option value="cherry">🌸 Cherry Blossom</option>
+                    <option value="midnight">🌙 Midnight Dark</option>
+                    <option value="sunset">🌅 Sunset Orange</option>
+                    <option value="light">☀️ Light Mode</option>
+                    <option value="custom">✨ Custom Theme</option>
+                  </select>
+                  <div style="display: flex; gap: 5px;">
+                    <button class="btn btn-small" onclick="openCustomThemeEditor()" style="flex: 1;">
+                      <i class="fas fa-edit"></i> Edit Custom
+                    </button>
+                    <button class="btn btn-small" onclick="importThemeFile()" style="flex: 1;">
+                      <i class="fas fa-upload"></i> Import CSS
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="setting-item">
@@ -327,7 +345,7 @@
               <div class="info-card">
                 <h3><i class="fas fa-sync-alt"></i> Updates</h3>
                 <div id="updateStatus" class="update-status">
-                  <p>Current Version: <strong>v0.0.2</strong></p>
+                  <p>Current Version: <strong>v0.0.3</strong></p>
                   <button class="btn" onclick="checkForUpdates()">
                     <i class="fas fa-download"></i> Check for Updates
                   </button>
@@ -339,19 +357,16 @@
                 <h3><i class="fas fa-list-alt"></i> Changelog</h3>
                 <div class="changelog">
                   <div class="changelog-entry">
-                    <div class="changelog-version">v0.0.2 - Beta</div>
+                    <div class="changelog-version">v0.0.3 - Beta</div>
                     <ul>
-                      <li><i class="fas fa-plus-circle"></i> Auto-update system with GitHub releases</li>
-                      <li><i class="fas fa-plus-circle"></i> System tray support - minimize to tray</li>
-                      <li><i class="fas fa-plus-circle"></i> Custom window controls</li>
-                      <li><i class="fas fa-plus-circle"></i> Discord Rich Presence integration</li>
-                      <li><i class="fas fa-plus-circle"></i> Offline downloads</li>
-                      <li><i class="fas fa-plus-circle"></i> Smart song recommendations</li>
-                      <li><i class="fas fa-plus-circle"></i> Volume & progress caching</li>
-                      <li><i class="fas fa-plus-circle"></i> Playlist management</li>
-                      <li><i class="fas fa-plus-circle"></i> Light/Dark theme support</li>
-                      <li><i class="fas fa-plus-circle"></i> Custom scrollbar design</li>
-                      <li><i class="fas fa-plus-circle"></i> Smooth animations</li>
+                      <li><i class="fas fa-star"></i> Windows 11 media controls integration (Media Session API)</li>
+                      <li><i class="fas fa-bolt"></i> Performance optimizations - lazy loading, DOM caching, passive listeners</li>
+                      <li><i class="fas fa-server"></i> Dual API support - Digger API + YouTube Music API (experimental)</li>
+                      <li><i class="fas fa-youtube"></i> YouTube InnerTube API integration with fallback clients</li>
+                      <li><i class="fas fa-wrench"></i> Fixed onboarding name input issue (permanent fix)</li>
+                      <li><i class="fas fa-toggle-on"></i> Debug mode toggle for development</li>
+                      <li><i class="fas fa-compress"></i> ASAR compression for faster app loading</li>
+                      <li><i class="fas fa-shield-alt"></i> DevTools disabled in production for cleaner UI</li>
                     </ul>
                   </div>
                 </div>
@@ -390,25 +405,23 @@
         <div class="settings-container">
           <div class="setting-item">
             <div class="setting-info">
-              <h3><i class="fas fa-palette"></i> Theme</h3>
-              <p>Choose between light and dark mode</p>
+              <h3><i class="fas fa-server"></i> Music API</h3>
+              <p>Choose music streaming source</p>
+              <p style="color: #ffa500; font-size: 0.85em; margin-top: 4px;">
+                <i class="fas fa-info-circle"></i> Digger API is recommended for reliable playback
+              </p>
+              <p style="color: #ff6b6b; font-size: 0.85em; margin-top: 2px;">
+                <i class="fas fa-exclamation-triangle"></i> YouTube Music API is experimental and may fail for some songs
+              </p>
             </div>
-            <div class="theme-toggle">
-              <button
-                class="theme-btn"
-                data-theme="light"
-                onclick="setTheme('light')"
-              >
-                <i class="fas fa-sun"></i> Light
-              </button>
-              <button
-                class="theme-btn active"
-                data-theme="dark"
-                onclick="setTheme('dark')"
-              >
-                <i class="fas fa-moon"></i> Dark
-              </button>
-            </div>
+            <select
+              class="quality-select"
+              id="musicAPISelect"
+              onchange="changeMusicAPI(this.value)"
+            >
+              <option value="digger">Digger API ✓ Recommended</option>
+              <option value="ytmusic">YouTube Music API (Experimental)</option>
+            </select>
           </div>
           <div class="setting-item">
             <div class="setting-info">
@@ -424,28 +437,6 @@
               <option value="LOSSLESS" selected>Lossless (FLAC)</option>
               <option value="HI_RES">Hi-Res (MQA)</option>
             </select>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <h3><i class="fab fa-discord"></i> Discord Rich Presence</h3>
-              <p>Show what you're listening to on Discord</p>
-            </div>
-            <div class="theme-toggle">
-              <button
-                class="theme-btn"
-                data-rpc="off"
-                onclick="toggleDiscordRPC(false)"
-              >
-                <i class="fas fa-times"></i> Off
-              </button>
-              <button
-                class="theme-btn active"
-                data-rpc="on"
-                onclick="toggleDiscordRPC(true)"
-              >
-                <i class="fas fa-check"></i> On
-              </button>
-            </div>
           </div>
           <div class="setting-item">
             <div class="setting-info">
@@ -475,15 +466,6 @@
               <i class="fas fa-edit"></i> Change Name
             </button>
           </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <h3><i class="fas fa-paint-brush"></i> Custom Theme</h3>
-              <p>Customize colors and gradients</p>
-            </div>
-            <button class="btn" onclick="openCustomThemeEditor()">
-              <i class="fas fa-edit"></i> Edit Custom Theme
-            </button>
-          </div>
           <div class="setting-item" style="border: 2px solid rgba(255, 59, 48, 0.3); background: rgba(255, 59, 48, 0.05);">
             <div class="setting-info">
               <h3><i class="fas fa-redo"></i> Reset Application</h3>
@@ -498,7 +480,7 @@
             Flowify is a free music player, we focus on privacy, no account, no
             tracking, no bullshit, just music.
           </p>
-          <p style="text-align: center;">Version 0.0.2 - Beta</p>
+          <p style="text-align: center;">Version 0.0.3 - Beta</p>
         </div>
       </div>
     </div>
@@ -770,6 +752,6 @@
       </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="js/script.js"></script>
   </body>
 </html>

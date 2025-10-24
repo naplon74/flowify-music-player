@@ -11,10 +11,45 @@ let downloads = JSON.parse(localStorage.getItem('downloads') || '[]');
 let audioQuality = localStorage.getItem('audioQuality') || 'LOSSLESS';
 let currentTheme = localStorage.getItem('theme') || 'dark';
 let discordRPCEnabled = JSON.parse(localStorage.getItem('discordRPCEnabled') || 'true');
+let musicAPI = localStorage.getItem('musicAPI') || 'digger'; // 'ytmusic' or 'digger'
 let navigationHistory = [];
 let currentArtistId = null;
 let cachedVolume = parseFloat(localStorage.getItem('volume') || '0.3');
 let cachedProgress = parseFloat(localStorage.getItem('lastProgress') || '0');
+
+// API Endpoints
+const API_ENDPOINTS = {
+  ytmusic: {
+    search: 'https://music.youtube.com/youtubei/v1/search',
+    player: 'https://music.youtube.com/youtubei/v1/player',
+    next: 'https://music.youtube.com/youtubei/v1/next'
+  },
+  digger: {
+    search: 'https://hifi.401658.xyz/search',
+    track: 'https://hifi.401658.xyz/track'
+  }
+};
+
+// YouTube InnerTube context (like OuterTune uses)
+const INNERTUBE_CONTEXT = {
+  client: {
+    clientName: 'WEB_REMIX',
+    clientVersion: '1.20241202.01.00',
+    hl: 'en',
+    gl: 'US'
+  }
+};
+
+// Use ANDROID_VR client for player requests (doesn't require auth!)
+const INNERTUBE_PLAYER_CONTEXT = {
+  client: {
+    clientName: 'ANDROID_VR',
+    clientVersion: '1.61.48',
+    androidSdkVersion: 30,
+    hl: 'en',
+    gl: 'US'
+  }
+};
 
 // Special playlist IDs
 const LIKED_SONGS_PLAYLIST_ID = '__liked_songs__';
@@ -25,6 +60,389 @@ let displayedSuggestions = 0;
 let isLoadingMoreSuggestions = false;
 
 let player = null;
+
+// Cached DOM elements (initialized after DOM ready)
+const DOM = {
+  playBtn: null,
+  progressBar: null,
+  currentTime: null,
+  duration: null,
+  volumeSlider: null,
+  searchResults: null,
+  trendingGrid: null,
+  suggestionsGrid: null,
+  init() {
+    this.playBtn = document.getElementById('playBtn');
+    this.progressBar = document.getElementById('progressBar');
+    this.currentTime = document.getElementById('currentTime');
+    this.duration = document.getElementById('duration');
+    this.volumeSlider = document.getElementById('volumeSlider');
+    this.searchResults = document.getElementById('searchResults');
+    this.trendingGrid = document.getElementById('trendingGrid');
+    this.suggestionsGrid = document.getElementById('suggestionsGrid');
+  }
+};
+
+// Debug mode check (only log in development)
+const DEBUG_MODE = !window.electronAPI || localStorage.getItem('debugMode') === 'true';
+const debugLog = (...args) => DEBUG_MODE && console.log(...args);
+const debugError = (...args) => console.error(...args); // Always log errors
+
+// Normalize track data from YouTube InnerTube API (like OuterTune)
+function normalizeTrackFromInnerTube(renderer) {
+  if (!renderer) return null;
+  
+  try {
+    // Extract video ID
+    const videoId = renderer.playlistItemData?.videoId || renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId;
+    if (!videoId) {
+      console.warn('[normalizeTrackFromInnerTube] No video ID found', renderer);
+      return null;
+    }
+    
+    // Extract title
+    const title = renderer.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text;
+    if (!title) {
+      console.warn('[normalizeTrackFromInnerTube] No title found', renderer);
+      return null;
+    }
+    
+    // Extract artist info (from flex column 1)
+    const flexColumn1 = renderer.flexColumns?.[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs || [];
+    const artistName = flexColumn1.find(run => run.navigationEndpoint?.browseEndpoint)?.text || flexColumn1[0]?.text || 'Unknown Artist';
+    const artistId = flexColumn1.find(run => run.navigationEndpoint?.browseEndpoint)?.navigationEndpoint?.browseEndpoint?.browseId;
+    
+    // Extract album info
+    const albumRun = flexColumn1.find(run => 
+      run.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === 'MUSIC_PAGE_TYPE_ALBUM'
+    );
+    const albumName = albumRun?.text;
+    const albumId = albumRun?.navigationEndpoint?.browseEndpoint?.browseId;
+    
+    // Extract thumbnail
+    const thumbnailUrl = renderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.slice(-1)[0]?.url;
+    
+    // Extract duration
+    const durationText = renderer.fixedColumns?.[0]?.musicResponsiveListItemFixedColumnRenderer?.text?.runs?.[0]?.text;
+    let duration = 0;
+    if (durationText) {
+      const parts = durationText.split(':').map(p => parseInt(p));
+      if (parts.length === 2) {
+        duration = parts[0] * 60 + parts[1];
+      } else if (parts.length === 3) {
+        duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+    }
+    
+    return {
+      id: videoId,
+      title: title,
+      artist: {
+        id: artistId,
+        name: artistName
+      },
+      album: {
+        id: albumId,
+        name: albumName || title,
+        cover: thumbnailUrl || ''
+      },
+      duration: duration
+    };
+  } catch (error) {
+    console.error('[normalizeTrackFromInnerTube] Error normalizing track:', error, renderer);
+    return null;
+  }
+}
+
+// Normalize track data from different APIs to a consistent format
+function normalizeTrack(track, apiType) {
+  if (!track) return null;
+  
+  // Digger API format (already correct)
+  if (apiType === 'digger') {
+    return track;
+  }
+  
+  // YouTube Music API format - normalize to Digger format
+  if (apiType === 'ytmusic') {
+    return {
+      id: track.videoId || track.id,
+      title: track.title || track.name,
+      artist: {
+        name: track.artist || (track.artists && track.artists[0]?.name) || 'Unknown Artist'
+      },
+      album: {
+        cover: track.thumbnail || track.thumbnails?.[0]?.url || track.cover || ''
+      },
+      duration: track.duration || track.lengthSeconds || 0
+    };
+  }
+  
+  return track;
+}
+
+// Music API Functions
+async function searchMusic(query) {
+  const endpoint = API_ENDPOINTS[musicAPI];
+  console.log(`[searchMusic] Using ${musicAPI} API:`, endpoint.search);
+  
+  try {
+    if (musicAPI === 'ytmusic') {
+      const url = endpoint.search + '?key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30&prettyPrint=false';
+      console.log('[searchMusic] YT Music InnerTube URL:', url);
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Format-Version': '1',
+          'X-YouTube-Client-Name': '67',
+          'X-YouTube-Client-Version': '1.20241202.01.00',
+          'Origin': 'https://music.youtube.com',
+          'Referer': 'https://music.youtube.com/'
+        },
+        body: JSON.stringify({
+          context: INNERTUBE_CONTEXT,
+          query: query,
+          params: 'EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D' // Song filter like OuterTune
+        })
+      });
+      
+      console.log('[searchMusic] YT Music Response status:', res.status);
+      
+      if (!res.ok) {
+        console.error('[searchMusic] YT Music HTTP error:', res.status, res.statusText);
+        const errorText = await res.text();
+        console.error('[searchMusic] Error response:', errorText);
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('[searchMusic] YT Music InnerTube raw response:', data);
+      
+      // Parse InnerTube response (like OuterTune does)
+      const items = data.contents?.tabbedSearchResultsRenderer?.tabs?.[0]
+        ?.tabRenderer?.content?.sectionListRenderer?.contents
+        ?.flatMap(section => 
+          section.musicShelfRenderer?.contents?.map(content =>
+            content.musicResponsiveListItemRenderer
+          ).filter(Boolean) || []
+        ) || [];
+      
+      console.log('[searchMusic] YT Music: Found', items.length, 'items');
+      
+      // Normalize all tracks to consistent format
+      const normalizedItems = items.map(item => normalizeTrackFromInnerTube(item)).filter(t => t !== null);
+      console.log('[searchMusic] YT Music: Normalized', normalizedItems.length, 'items');
+      if (normalizedItems.length > 0) {
+        console.log('[searchMusic] YT Music: Sample normalized item:', normalizedItems[0]);
+      }
+      return { items: normalizedItems };
+    } else {
+      const url = `${endpoint.search}/?s=${encodeURIComponent(query)}`;
+      console.log('[searchMusic] Digger URL:', url);
+      const res = await fetch(url);
+      console.log('[searchMusic] Digger Response status:', res.status);
+      
+      if (!res.ok) {
+        console.error('[searchMusic] Digger HTTP error:', res.status, res.statusText);
+        throw new Error(`HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('[searchMusic] Digger raw response:', data);
+      return data;
+    }
+  } catch (error) {
+    console.error('[searchMusic] Error:', error);
+    return { items: [] };
+  }
+}
+
+// Define multiple client options for fallback
+const YOUTUBE_CLIENTS = {
+  IOS: {
+    context: {
+      client: {
+        clientName: 'IOS',
+        clientVersion: '20.10.4',
+        deviceMake: 'Apple',
+        deviceModel: 'iPhone16,2',
+        hl: 'en',
+        gl: 'US',
+        osName: 'iOS',
+        osVersion: '18.3.2.22D82'
+      }
+    },
+    headers: {
+      'X-YouTube-Client-Name': '5',
+      'X-YouTube-Client-Version': '20.10.4',
+      'User-Agent': 'com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)'
+    }
+  },
+  TVHTML5: {
+    context: {
+      client: {
+        clientName: 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
+        clientVersion: '2.0',
+        hl: 'en',
+        gl: 'US'
+      },
+      thirdParty: {
+        embedUrl: 'https://www.youtube.com'
+      }
+    },
+    headers: {
+      'X-YouTube-Client-Name': '85',
+      'X-YouTube-Client-Version': '2.0',
+      'User-Agent': 'Mozilla/5.0 (PlayStation; PlayStation 4/12.02) AppleWebKit/605.1.15'
+    }
+  }
+};
+
+async function getTrackURL(id, quality = audioQuality) {
+  try {
+    const endpoint = API_ENDPOINTS[musicAPI];
+    if (musicAPI === 'ytmusic') {
+      console.log('[getTrackURL] Fetching stream URL for video:', id);
+      
+      // Try different clients in order until one works
+      const clientsToTry = ['IOS', 'TVHTML5'];
+      
+      for (const clientName of clientsToTry) {
+        console.log(`[getTrackURL] Trying client: ${clientName}`);
+        const client = YOUTUBE_CLIENTS[clientName];
+        
+        try {
+          const url = endpoint.player + '?key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30&prettyPrint=false';
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Format-Version': '1',
+              ...client.headers,
+              'Origin': 'https://www.youtube.com'
+            },
+            body: JSON.stringify({
+              context: client.context,
+              videoId: id
+            })
+          });
+          
+          console.log(`[getTrackURL] ${clientName} response status:`, res.status);
+          if (!res.ok) {
+            console.warn(`[getTrackURL] ${clientName} failed with status ${res.status}, trying next client...`);
+            continue;
+          }
+          
+          const data = await res.json();
+          
+          // Check if playability is OK
+          if (data.playabilityStatus?.status !== 'OK') {
+            console.warn(`[getTrackURL] ${clientName} playability:`, data.playabilityStatus?.status);
+            continue;
+          }
+          
+          // Get audio formats
+          const formats = data.streamingData?.adaptiveFormats || [];
+          const audioFormats = formats.filter(f => f.mimeType?.includes('audio'));
+          
+          if (audioFormats.length === 0) {
+            console.warn(`[getTrackURL] ${clientName} no audio formats, trying next...`);
+            continue;
+          }
+          
+          // Select best format
+          const webmOpus = audioFormats.find(f => f.mimeType?.includes('webm') && f.mimeType?.includes('opus'));
+          const mp4Aac = audioFormats.find(f => f.mimeType?.includes('mp4') && f.mimeType?.includes('mp4a'));
+          const bestFormat = webmOpus || mp4Aac || audioFormats.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+          
+          if (!bestFormat.url) {
+            console.warn(`[getTrackURL] ${clientName} no direct URL, trying next...`);
+            continue;
+          }
+          
+          console.log(`[getTrackURL] ${clientName} SUCCESS! URL:`, bestFormat.url.substring(0, 100) + '...');
+          return bestFormat.url;
+        } catch (clientError) {
+          console.warn(`[getTrackURL] ${clientName} error:`, clientError);
+          continue;
+        }
+      }
+      
+      // All clients failed
+      alert('YouTube Music: Could not play this song.\n\nPlease use "Digger API" in Settings instead.');
+      throw new Error('All YouTube clients failed');
+    } else {
+      const res = await fetch(`${endpoint.track}/?id=${id}&quality=${quality}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data.find(obj => obj.OriginalTrackUrl)?.OriginalTrackUrl;
+    }
+  } catch (error) {
+    console.error('Track URL error:', error);
+    return null;
+  }
+}
+
+// Notification System
+function showNotification(title, message, type = 'info', onClick = null) {
+  // Remove any existing notification
+  const existing = document.querySelector('.app-notification');
+  if (existing) {
+    existing.remove();
+  }
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `app-notification notification-${type}`;
+  
+  const iconMap = {
+    'info': 'fa-info-circle',
+    'success': 'fa-check-circle',
+    'warning': 'fa-exclamation-triangle',
+    'error': 'fa-exclamation-circle'
+  };
+  
+  notification.innerHTML = `
+    <div class="notification-icon">
+      <i class="fas ${iconMap[type] || iconMap.info}"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-message">${message}</div>
+    </div>
+    <button class="notification-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  // Add click handler if provided
+  if (onClick) {
+    notification.style.cursor = 'pointer';
+    notification.addEventListener('click', (e) => {
+      if (!e.target.closest('.notification-close')) {
+        onClick();
+        notification.remove();
+      }
+    });
+  }
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  // Auto-remove after 8 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 8000);
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,14 +466,47 @@ function showWelcomeScreen() {
     currentLanguage = selectedLanguage;
     updateUILanguage();
     
-    // Setup name input
+    // Setup name input with ULTRA-AGGRESSIVE fixes
     const nameInput = document.getElementById('welcomeNameInput');
     if (nameInput) {
-      // Explicitly ensure input is editable
+      // Remove any blocking attributes
       nameInput.removeAttribute('readonly');
       nameInput.removeAttribute('disabled');
       nameInput.disabled = false;
       nameInput.readOnly = false;
+      
+      // Force all pointer and interaction styles
+      nameInput.style.pointerEvents = 'auto';
+      nameInput.style.cursor = 'text';
+      nameInput.style.userSelect = 'text';
+      nameInput.style.webkitUserSelect = 'text';
+      nameInput.style.webkitAppRegion = 'no-drag';
+      nameInput.style.zIndex = '99999';
+      nameInput.style.position = 'relative';
+      nameInput.style.background = 'rgba(255, 255, 255, 0.05)';
+      nameInput.style.color = 'var(--text-primary)';
+      
+      // Force parent containers to be non-draggable
+      let parent = nameInput.parentElement;
+      while (parent && parent !== document.body) {
+        parent.style.webkitAppRegion = 'no-drag';
+        parent.style.pointerEvents = 'auto';
+        parent = parent.parentElement;
+      }
+      
+      // Forcefully enable on every interaction
+      ['click', 'focus', 'mousedown', 'touchstart'].forEach(eventType => {
+        nameInput.addEventListener(eventType, function(e) {
+          this.disabled = false;
+          this.readOnly = false;
+          this.style.pointerEvents = 'auto';
+          this.style.cursor = 'text';
+          if (eventType === 'click' || eventType === 'mousedown') {
+            this.focus();
+          }
+          e.stopPropagation();
+        }, true);
+      });
       
       // Allow Enter key to submit
       nameInput.addEventListener('keypress', (e) => {
@@ -66,13 +517,22 @@ function showWelcomeScreen() {
       
       // Add input event for debugging
       nameInput.addEventListener('input', (e) => {
-        console.log('Input value changed:', e.target.value);
+        debugLog('Input value changed:', e.target.value);
       });
       
-      // Focus on name input after animation
+      // Focus on name input after animation - multiple attempts
       setTimeout(() => {
+        nameInput.disabled = false;
+        nameInput.readOnly = false;
         nameInput.focus();
-        console.log('Name input focused. Editable:', !nameInput.readOnly && !nameInput.disabled);
+        nameInput.click();
+        debugLog('Name input focused. Editable:', !nameInput.readOnly && !nameInput.disabled);
+      }, 500);
+      
+      setTimeout(() => {
+        nameInput.disabled = false;
+        nameInput.readOnly = false;
+        nameInput.focus();
       }, 1000);
     }
   }
@@ -137,6 +597,9 @@ function setTheme(theme) {
 }
 
 function initializeApp() {
+  // Initialize DOM cache
+  DOM.init();
+  
   // Load and apply language
   currentLanguage = localStorage.getItem('language') || 'en';
   updateUILanguage();
@@ -146,8 +609,22 @@ function initializeApp() {
   updateThemeButtons();
   updateDiscordRPCButtons();
   
-  // Initialize custom theme
-  initializeCustomTheme();
+  // Initialize custom theme and presets - apply selected theme
+  const savedPreset = localStorage.getItem('selectedThemePreset');
+  if (savedPreset === 'custom') {
+    initializeCustomTheme();
+  } else if (savedPreset) {
+    applyThemePreset(savedPreset);
+  } else {
+    // Default to 'default' theme
+    applyThemePreset('default');
+  }
+  
+  // Initialize theme selector UI
+  const selector = document.getElementById('themePresetSelector');
+  if (selector) {
+    selector.value = savedPreset || 'default';
+  }
   
   // Initialize audio player
   player = document.getElementById('player');
@@ -165,6 +642,8 @@ function initializeApp() {
   player.addEventListener('error', handleAudioError);
   player.addEventListener('canplay', handleAudioReady);
   player.addEventListener('volumechange', cacheVolume);
+  player.addEventListener('play', handlePlayStateChange);
+  player.addEventListener('pause', handlePauseStateChange);
   
   // Set cached volume after a short delay to ensure DOM is ready
   setTimeout(() => {
@@ -173,8 +652,28 @@ function initializeApp() {
     if (volumeSlider) {
       volumeSlider.value = cachedVolume * 100;
     }
-    console.log('Volume restored to:', cachedVolume);
+    debugLog('Volume restored to:', cachedVolume);
   }, 100);
+  
+  // Setup Media Session API for Windows media controls
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (player && currentTrack) {
+        player.play();
+      }
+    });
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (player) {
+        player.pause();
+      }
+    });
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      previousTrack();
+    });
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      nextTrack();
+    });
+  }
   
   // Initialize special playlists and migrate data
   initializeSpecialPlaylists();
@@ -242,6 +741,7 @@ function setupEventListeners() {
 
     // Toggle trending visibility while typing
     queryInput.addEventListener('input', function(e) {
+      console.log('[queryInput] Input event fired, value:', e.target.value);
       const val = e.target.value.trim();
       const trendingSection = document.getElementById('trendingSection');
       const searchResultsTitle = document.getElementById('searchResultsTitle');
@@ -305,14 +805,7 @@ function setupEventListeners() {
 function initializeCustomizePage() {
   const trendingToggle = document.getElementById('custToggleTrending');
   const discordToggle = document.getElementById('custToggleDiscord');
-  const theme = localStorage.getItem('theme') || currentTheme || 'dark';
-  // Theme button active state
-  const darkBtn = document.getElementById('custThemeDark');
-  const lightBtn = document.getElementById('custThemeLight');
-  if (darkBtn && lightBtn) {
-    if (theme === 'dark') { darkBtn.classList.add('btn-secondary'); lightBtn.classList.remove('btn-secondary'); }
-    else { lightBtn.classList.add('btn-secondary'); darkBtn.classList.remove('btn-secondary'); }
-  }
+  
   if (trendingToggle) {
     const pref = localStorage.getItem('showTrending');
     trendingToggle.checked = (pref === null || pref === 'true');
@@ -453,7 +946,7 @@ async function search() {
   if (!resultsDiv) return;
   
   try {
-    console.log('Searching for:', query);
+    debugLog('Searching for:', query);
     
     // Show loading state
     resultsDiv.innerHTML = '<div class="empty-state"><h3>🔍 Searching...</h3><p>Finding your music...</p></div>';
@@ -461,18 +954,19 @@ async function search() {
   // Hide trending while searching
   if (trendingSection) trendingSection.style.display = 'none';
 
-  const res = await fetch(`https://hifi.401658.xyz/search/?s=${encodeURIComponent(query)}`);
+  const data = await searchMusic(query);
     
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+    if (!data) {
+      throw new Error('No data returned from API');
     }
     
-    const data = await res.json();
-    console.log('Search response:', data);
+    console.log('[search] Search response:', data);
+    console.log('[search] Items count:', data.items ? data.items.length : 0);
 
     resultsDiv.innerHTML = '';
 
     if (data.items && data.items.length > 0) {
+      console.log('[search] Displaying', data.items.length, 'results');
       if (emptyDiv) emptyDiv.style.display = 'none';
       const searchResultsTitle = document.getElementById('searchResultsTitle');
       if (searchResultsTitle) searchResultsTitle.style.display = 'block';
@@ -480,12 +974,13 @@ async function search() {
       if (suggestionsSection) suggestionsSection.style.display = 'none';
   if (trendingSection) trendingSection.style.display = 'none';
       
-      data.items.forEach(item => {
-        console.log('Creating card for item:', item);
+      data.items.forEach((item, index) => {
+        console.log(`[search] Creating card ${index + 1}/${data.items.length} for:`, item.title, 'by', item.artist?.name);
         const trackCard = createTrackCard(item);
         resultsDiv.appendChild(trackCard);
       });
     } else {
+      console.warn('[search] No results found for query:', query);
       resultsDiv.innerHTML = '';
       const searchResultsTitle = document.getElementById('searchResultsTitle');
       if (searchResultsTitle) searchResultsTitle.style.display = 'none';
@@ -502,46 +997,81 @@ async function search() {
 
 // Create track card
 function createTrackCard(item) {
-  const div = document.createElement('div');
-  div.className = 'track-card';
-  
-  // Fix image URL format
-  let imageUrl = '';
-  if (item.album && item.album.cover) {
-    imageUrl = `https://resources.tidal.com/images/${item.album.cover.replace(/-/g, '/')}/320x320.jpg`;
-  }
-  
-  // Check if liked from the Liked Songs playlist
+  try {
+    if (!item) {
+      console.error('[createTrackCard] Null item provided');
+      return document.createElement('div');
+    }
+    
+    console.log('[createTrackCard] Creating card for:', item);
+    
+    const div = document.createElement('div');
+    div.className = 'track-card';
+    
+    // Fix image URL format
+    let imageUrl = '';
+    if (item.album && item.album.cover) {
+      // Check if it's already a full URL (from YouTube Music)
+      if (item.album.cover.startsWith('http')) {
+        imageUrl = item.album.cover;
+      } else {
+        // Tidal format (from Digger API)
+        imageUrl = `https://resources.tidal.com/images/${item.album.cover.replace(/-/g, '/')}/320x320.jpg`;
+      }
+    }
+    
+    // Check if liked from the Liked Songs playlist
   const likedPlaylist = playlists.find(p => p.id === LIKED_SONGS_PLAYLIST_ID);
   const isLiked = likedPlaylist ? likedPlaylist.songs.some(song => song.id === item.id) : false;
   
   div.innerHTML = `
-    <img class="track-image" src="${imageUrl}" alt="${item.title}" 
+    <img class="track-image" src="${imageUrl}" alt="${item.title}" loading="lazy"
          onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjNDQ0Ii8+PHRleHQgeD0iMTAwIiB5PSIxMDAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+4pmrPC90ZXh0Pjwvc3ZnPg=='; this.style.backgroundColor='#444';">
     <div class="track-title">${item.title}</div>
     <div class="track-artist" onclick="openArtistPage('${item.artist.name.replace(/'/g, "\\'")}')" style="cursor: pointer; transition: color 0.2s ease;" title="View artist" onmouseover="this.style.color='var(--accent-green)'" onmouseout="this.style.color=''">
       <i class="fas fa-user-music"></i> ${item.artist.name}
     </div>
     <div class="track-actions">
-      <button class="btn btn-small" onclick="playTrack(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+      <button class="btn btn-small" onclick="playTrack('${item.id}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
         <i class="fas fa-play"></i> Play
       </button>
-      <button class="btn btn-small ${isLiked ? 'btn-secondary' : ''}" onclick="toggleLike(${item.id}, ${JSON.stringify(item).replace(/"/g, '&quot;')})" id="like-${item.id}">
-        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-      </button>
-      <button class="btn btn-small" onclick="addToPlaylist(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-        <i class="fas fa-plus"></i>
-      </button>
+      <div style="display: flex; gap: 5px;">
+        <button class="btn btn-small ${isLiked ? 'btn-secondary' : ''}" onclick="toggleLike('${item.id}', ${JSON.stringify(item).replace(/"/g, '&quot;')})" id="like-${item.id}">
+          <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+        </button>
+        <button class="btn btn-small" onclick="addToPlaylist(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
     </div>
   `;
   
-  return div;
+    return div;
+  } catch (error) {
+    console.error('[createTrackCard] Error creating card:', error, item);
+    return document.createElement('div'); // Return empty div on error
+  }
+}
+
+// Audio state change handlers
+function handlePlayStateChange() {
+  isPlaying = true;
+  updatePlayButton();
+  updateDiscordPresence();
+}
+
+function handlePauseStateChange() {
+  isPlaying = false;
+  updatePlayButton();
+  updateDiscordPresence();
 }
 
 // Audio error handling
 function handleAudioError(e) {
   console.error('Audio error:', e);
   console.error('Error details:', player.error);
+  console.error('Current source:', player.src);
+  console.error('Current track:', currentTrack);
   
   let errorMessage = 'Audio playback failed. ';
   
@@ -551,20 +1081,24 @@ function handleAudioError(e) {
         errorMessage += 'The audio download was aborted.';
         break;
       case 2:
-        errorMessage += 'A network error occurred.';
+        errorMessage += 'A network error occurred. Check console for details.';
         break;
       case 3:
         errorMessage += 'The audio file appears to be corrupted.';
         break;
       case 4:
-        errorMessage += 'The audio format is not supported.';
+        errorMessage += 'The audio format is not supported. This might be a codec issue - check console logs.';
         break;
       default:
-        errorMessage += 'An unknown error occurred.';
+        errorMessage += 'An unknown error occurred (code: ' + player.error.code + ').';
+    }
+    
+    if (player.error.message) {
+      console.error('Error message:', player.error.message);
     }
   }
   
-  alert(errorMessage + ' Please try another song.');
+  alert(errorMessage);
   resetPlayButtons();
 }
 
@@ -585,25 +1119,20 @@ function resetPlayButtons() {
 // Play track
 async function playTrack(id, trackData) {
   try {
+    console.log('[playTrack] Called with id:', id, 'type:', typeof id);
+    console.log('[playTrack] Track data:', trackData);
+    
     // Show loading state
-    const playButtons = document.querySelectorAll(`button[onclick*="playTrack(${id}"]`);
+    const playButtons = document.querySelectorAll(`button[onclick*="playTrack('${id}'"]`);
     playButtons.forEach(btn => {
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
       btn.disabled = true;
     });
     
-    console.log('Fetching track data for ID:', id);
-    const res = await fetch(`https://hifi.401658.xyz/track/?id=${id}&quality=${audioQuality}`);
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    console.log('Track response:', data);
-    
-    const trackUrl = data.find(obj => obj.OriginalTrackUrl)?.OriginalTrackUrl;
-    console.log('Track URL:', trackUrl);
+    console.log('[playTrack] Fetching track data for ID:', id);
+    console.log('[playTrack] Track data:', trackData);
+    const trackUrl = await getTrackURL(id, audioQuality);
+    console.log('[playTrack] Track URL:', trackUrl);
 
     if (trackUrl) {
       currentTrack = { ...trackData, url: trackUrl };
@@ -612,15 +1141,16 @@ async function playTrack(id, trackData) {
       player.pause();
       player.currentTime = 0;
       
-      // Set new source
+      // Set new source - Electron should handle CORS
       player.src = trackUrl;
+      console.log('[playTrack] Set player src to:', trackUrl.substring(0, 100) + '...');
       player.load();
       
       // Try to play
       try {
         await player.play();
         isPlaying = true;
-        console.log('Audio playing successfully');
+        console.log('[playTrack] Audio playing successfully');
         
         updateNowPlaying();
         updatePlayButton();
@@ -640,7 +1170,7 @@ async function playTrack(id, trackData) {
         
         // Reset button states
         playButtons.forEach(btn => {
-          btn.innerHTML = '▶️ Play';
+          btn.innerHTML = '<i class="fas fa-play"></i> Play';
           btn.disabled = false;
         });
         
@@ -649,7 +1179,7 @@ async function playTrack(id, trackData) {
         
         // Reset button states
         playButtons.forEach(btn => {
-          btn.innerHTML = '▶️ Play';
+          btn.innerHTML = '<i class="fas fa-play"></i> Play';
           btn.disabled = false;
         });
         
@@ -661,7 +1191,7 @@ async function playTrack(id, trackData) {
       
       // Reset button states
       playButtons.forEach(btn => {
-        btn.innerHTML = '▶️ Play';
+        btn.innerHTML = '<i class="fas fa-play"></i> Play';
         btn.disabled = false;
       });
     }
@@ -670,9 +1200,9 @@ async function playTrack(id, trackData) {
     alert('Failed to play track. Please check your internet connection and try again.');
     
     // Reset button states
-    const playButtons = document.querySelectorAll(`button[onclick*="playTrack(${id}"]`);
+    const playButtons = document.querySelectorAll(`button[onclick*="playTrack('${id}'"]`);
     playButtons.forEach(btn => {
-      btn.innerHTML = '▶️ Play';
+      btn.innerHTML = '<i class="fas fa-play"></i> Play';
       btn.disabled = false;
     });
   }
@@ -814,6 +1344,33 @@ function updateNowPlaying() {
     }
   }
   
+  // Update Media Session API (for Windows media controls)
+  if ('mediaSession' in navigator && currentTrack) {
+    const albumArt = currentTrack.album && currentTrack.album.cover 
+      ? `https://resources.tidal.com/images/${currentTrack.album.cover.replace(/-/g, '/')}/640x640.jpg`
+      : '';
+    
+    // Get current playlist name
+    let playlistName = 'Flowify';
+    if (currentPlaylist.length > 0) {
+      const currentPlaylistObj = playlists.find(p => 
+        p.songs.some(s => s.id === currentTrack.id)
+      );
+      if (currentPlaylistObj) {
+        playlistName = currentPlaylistObj.name;
+      }
+    }
+    
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.artist.name,
+      album: playlistName,
+      artwork: albumArt ? [
+        { src: albumArt, sizes: '640x640', type: 'image/jpeg' }
+      ] : []
+    });
+  }
+  
   // Update Discord RPC
   updateDiscordPresence();
 }
@@ -902,12 +1459,16 @@ function downloadCurrentTrack() {
 }
 
 function updatePlayButton() {
-  const playBtn = document.getElementById('playBtn');
-  if (playBtn) {
-    const icon = playBtn.querySelector('i');
+  if (DOM.playBtn) {
+    const icon = DOM.playBtn.querySelector('i');
     if (icon) {
       icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
     }
+  }
+  
+  // Update Media Session playback state
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }
 }
 
@@ -915,14 +1476,12 @@ function updateProgress() {
   if (!player || !player.duration) return;
   
   const progress = (player.currentTime / player.duration) * 100;
-  const progressBar = document.getElementById('progressBar');
-  if (progressBar) {
-    progressBar.style.width = progress + '%';
+  if (DOM.progressBar) {
+    DOM.progressBar.style.width = progress + '%';
   }
   
-  const currentTimeEl = document.getElementById('currentTime');
-  if (currentTimeEl) {
-    currentTimeEl.textContent = formatTime(player.currentTime);
+  if (DOM.currentTime) {
+    DOM.currentTime.textContent = formatTime(player.currentTime);
   }
   
   // Cache progress every 5 seconds
@@ -1091,9 +1650,7 @@ function playFromLikedSongs(index) {
 // Download functionality
 async function downloadTrack(id, trackData) {
   try {
-    const res = await fetch(`https://hifi.401658.xyz/track/?id=${id}&quality=LOSSLESS`);
-    const data = await res.json();
-    const trackUrl = data.find(obj => obj.OriginalTrackUrl)?.OriginalTrackUrl;
+    const trackUrl = await getTrackURL(id, 'LOSSLESS');
 
     if (trackUrl) {
       // Create download link
@@ -1203,10 +1760,9 @@ async function loadSuggestions() {
     // Search for similar songs from multiple artists
     for (const likedSong of artistsToSearch) {
       try {
-        const res = await fetch(`https://hifi.401658.xyz/search/?s=${encodeURIComponent(likedSong.artist.name)}`);
-        const data = await res.json();
+        const data = await searchMusic(likedSong.artist.name);
         
-        if (data.items && data.items.length > 0) {
+        if (data && data.items && data.items.length > 0) {
           // Filter out already liked songs
           const newTracks = data.items.filter(item => 
             !likedSongs.some(song => song.id === item.id) &&
@@ -1259,21 +1815,34 @@ async function loadTrendingSongs() {
 
     // Limit concurrent requests to avoid hammering the endpoint
     const sampleQueries = trendingQueries.sort(() => Math.random() - 0.5).slice(0, 5);
+    console.log('[loadTrending] Searching for:', sampleQueries);
+    
     const results = await Promise.allSettled(
-      sampleQueries.map(q => fetch(`https://hifi.401658.xyz/search/?s=${encodeURIComponent(q)}`)
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      sampleQueries.map(q => searchMusic(q).catch(err => Promise.reject(err)))
     );
+
+    console.log('[loadTrending] Results:', results);
 
     // Collect items from successful queries
     let combined = [];
     for (const r of results) {
       if (r.status === 'fulfilled' && r.value && Array.isArray(r.value.items)) {
+        console.log('[loadTrending] Adding', r.value.items.length, 'items');
         combined.push(...r.value.items);
+      } else if (r.status === 'rejected') {
+        console.error('[loadTrending] Query rejected:', r.reason);
       }
+    }
+
+    console.log('[loadTrending] Combined items before filter:', combined.length);
+    if (combined.length > 0) {
+      console.log('[loadTrending] Sample item:', combined[0]);
     }
 
     // Filter to track-like items with required fields
     combined = combined.filter(it => it && it.id && it.title && it.artist && it.artist.name && it.album && it.album.cover);
+
+    console.log('[loadTrending] Items after filter:', combined.length);
 
     // Deduplicate by track id
     const seen = new Set();
@@ -1356,10 +1925,9 @@ async function loadMoreSuggestionsFromNewArtists() {
     
     for (const likedSong of artistsToSearch) {
       try {
-        const res = await fetch(`https://hifi.401658.xyz/search/?s=${encodeURIComponent(likedSong.artist.name)}`);
-        const data = await res.json();
+        const data = await searchMusic(likedSong.artist.name);
         
-        if (data.items && data.items.length > 0) {
+        if (data && data.items && data.items.length > 0) {
           const newTracks = data.items.filter(item => 
             !likedSongs.some(song => song.id === item.id) &&
             !suggestionsPool.some(existing => existing.id === item.id) &&
@@ -1426,8 +1994,8 @@ function setupSuggestionsInfiniteScroll() {
     }
   };
   
-  contentArea.addEventListener('scroll', contentArea.suggestionsScrollHandler);
-  console.log('Infinite scroll setup complete for suggestions');
+  contentArea.addEventListener('scroll', contentArea.suggestionsScrollHandler, { passive: true });
+  debugLog('Infinite scroll setup complete for suggestions');
 }
 
 // Playlist functionality
@@ -2154,6 +2722,18 @@ function initializeLanguageSelect() {
   if (languageSelect) {
     languageSelect.value = currentLanguage;
   }
+  
+  // Initialize music API select
+  const musicAPISelect = document.getElementById('musicAPISelect');
+  if (musicAPISelect) {
+    musicAPISelect.value = musicAPI;
+  }
+  
+  // Initialize audio quality select
+  const qualitySelect = document.getElementById('qualitySelect');
+  if (qualitySelect) {
+    qualitySelect.value = audioQuality;
+  }
 }
 
 // Change user name function
@@ -2263,6 +2843,30 @@ function updateQuality(quality) {
   localStorage.setItem('audioQuality', quality);
 }
 
+// Change Music API
+function changeMusicAPI(api) {
+  musicAPI = api;
+  localStorage.setItem('musicAPI', api);
+  
+  // Show success notification
+  const apiName = api === 'ytmusic' ? 'YouTube Music' : 'Digger API';
+  showNotification('API Changed', `Now using ${apiName}`, 'success');
+  
+  // Reload trending songs with new API
+  const trendingPref = localStorage.getItem('showTrending');
+  if (trendingPref === null || trendingPref === 'true') {
+    console.log('[changeMusicAPI] Reloading trending with', api);
+    loadTrendingSongs();
+  }
+  
+  // Note: Quality options might differ between APIs
+  if (api === 'ytmusic') {
+    debugLog('Switched to YouTube Music API');
+  } else {
+    debugLog('Switched to Digger API');
+  }
+}
+
 // Clear downloads
 function clearDownloads() {
   if (confirm('Are you sure you want to clear all downloads?')) {
@@ -2323,9 +2927,7 @@ function closeWindow() {
 // Offline download function
 async function downloadTrackOffline(id, trackData) {
   try {
-    const res = await fetch(`https://hifi.401658.xyz/track/?id=${id}&quality=${audioQuality}`);
-    const data = await res.json();
-    const trackUrl = data.find(obj => obj.OriginalTrackUrl)?.OriginalTrackUrl;
+    const trackUrl = await getTrackURL(id, audioQuality);
 
     if (trackUrl && window.electronAPI) {
       // Show downloading status
@@ -2436,10 +3038,9 @@ async function searchArtist(artistName) {
     if (artistTracks) artistTracks.innerHTML = '<div class="empty-state"><h3><i class="fas fa-spinner fa-spin"></i> Loading...</h3></div>';
     
     // Search for artist
-    const searchRes = await fetch(`https://hifi.401658.xyz/search/?s=${encodeURIComponent(artistName)}`);
-    const searchData = await searchRes.json();
+    const searchData = await searchMusic(artistName);
     
-    if (searchData.items && searchData.items.length > 0) {
+    if (searchData && searchData.items && searchData.items.length > 0) {
       // Filter tracks by exact artist name match (case-insensitive)
       const filteredTracks = searchData.items.filter(item => 
         item.artist.name.toLowerCase() === artistName.toLowerCase()
@@ -2588,62 +3189,94 @@ function checkForUpdates() {
 
 function handleUpdateStatus(data) {
   const updateInfo = document.getElementById('updateInfo');
-  if (!updateInfo) return;
   
   switch(data.status) {
     case 'checking':
-      updateInfo.innerHTML = '<p style="color: var(--accent-green);"><i class="fas fa-spinner fa-spin"></i> Checking for updates...</p>';
+      if (updateInfo) {
+        updateInfo.innerHTML = '<p style="color: var(--accent-green);"><i class="fas fa-spinner fa-spin"></i> Checking for updates...</p>';
+      }
       break;
       
     case 'available':
-      updateInfo.innerHTML = `
-        <div class="update-info-box">
-          <h4><i class="fas fa-download"></i> Update Available: v${data.version}</h4>
-          <p>A new version is available!</p>
-          <button class="btn" onclick="downloadUpdate()" style="margin-top: 10px;">
-            <i class="fas fa-download"></i> Download Update
-          </button>
-        </div>
-      `;
+      // Show notification for available updates
+      showNotification(
+        'Update Available!',
+        `Version ${data.version} is ready to download. Click here to update.`,
+        'info',
+        () => {
+          showSection('info');
+          const updateInfo = document.getElementById('updateInfo');
+          if (updateInfo) {
+            updateInfo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      );
+      
+      if (updateInfo) {
+        updateInfo.innerHTML = `
+          <div class="update-info-box">
+            <h4><i class="fas fa-download"></i> Update Available: v${data.version}</h4>
+            <p>A new version is available!</p>
+            <button class="btn" onclick="downloadUpdate()" style="margin-top: 10px;">
+              <i class="fas fa-download"></i> Download Update
+            </button>
+          </div>
+        `;
+      }
       break;
       
     case 'not-available':
-      updateInfo.innerHTML = '<p style="color: var(--accent-green);"><i class="fas fa-check-circle"></i> You are using the latest version!</p>';
-      setTimeout(() => {
-        updateInfo.innerHTML = '';
-      }, 5000);
+      if (updateInfo) {
+        updateInfo.innerHTML = '<p style="color: var(--accent-green);"><i class="fas fa-check-circle"></i> You are using the latest version!</p>';
+        setTimeout(() => {
+          updateInfo.innerHTML = '';
+        }, 5000);
+      }
       break;
       
     case 'downloading':
       const percent = Math.round(data.percent);
-      updateInfo.innerHTML = `
-        <div class="update-info-box">
-          <h4><i class="fas fa-download"></i> Downloading Update</h4>
-          <p>Downloading... ${percent}%</p>
-          <div class="update-progress">
-            <div class="update-progress-bar">
-              <div class="update-progress-fill" style="width: ${percent}%"></div>
+      if (updateInfo) {
+        updateInfo.innerHTML = `
+          <div class="update-info-box">
+            <h4><i class="fas fa-download"></i> Downloading Update</h4>
+            <p>Downloading... ${percent}%</p>
+            <div class="update-progress">
+              <div class="update-progress-bar">
+                <div class="update-progress-fill" style="width: ${percent}%"></div>
+              </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      }
       break;
       
     case 'downloaded':
-      updateInfo.innerHTML = `
-        <div class="update-info-box">
-          <h4><i class="fas fa-check-circle"></i> Update Downloaded!</h4>
-          <p>Version ${data.version} is ready to install.</p>
-          <p style="font-size: 13px; margin-top: 10px;">The update will be installed when you restart the app.</p>
-          <button class="btn" onclick="installUpdate()" style="margin-top: 10px;">
-            <i class="fas fa-sync-alt"></i> Restart and Install
-          </button>
-        </div>
-      `;
+      // Show notification when download completes
+      showNotification(
+        'Update Ready!',
+        `Version ${data.version} has been downloaded and will install on restart.`,
+        'success'
+      );
+      
+      if (updateInfo) {
+        updateInfo.innerHTML = `
+          <div class="update-info-box">
+            <h4><i class="fas fa-check-circle"></i> Update Downloaded!</h4>
+            <p>Version ${data.version} is ready to install.</p>
+            <p style="font-size: 13px; margin-top: 10px;">The update will be installed when you restart the app.</p>
+            <button class="btn" onclick="installUpdate()" style="margin-top: 10px;">
+              <i class="fas fa-sync-alt"></i> Restart and Install
+            </button>
+          </div>
+        `;
+      }
       break;
       
     case 'error':
-      updateInfo.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-circle"></i> Error: ${data.message}</p>`;
+      if (updateInfo) {
+        updateInfo.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-circle"></i> Error: ${data.message}</p>`;
+      }
       break;
   }
 }
@@ -2684,7 +3317,7 @@ function createPlaylistRow(track, index, playlistId) {
   
   item.innerHTML = `
     <div class="playlist-number">${index + 1}</div>
-    <img src="${imageUrl}" width="72" height="72" style="border-radius: 10px; background: #444; object-fit: cover;" 
+    <img src="${imageUrl}" width="72" height="72" loading="lazy" style="border-radius: 10px; background: #444; object-fit: cover;" 
          onerror="this.style.display='none';" alt="">
     <div class="playlist-info" style="min-width:0;">
       <div class="playlist-title" style="font-weight:600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${track.title}</div>
@@ -2716,6 +3349,7 @@ const defaultTheme = {
   textSecondary: '#c8ffd2',
   accentGreen: '#2d8659',
   accentGreenHover: '#3aa66f'
+  // Note: derived variables (borderColor, textTertiary, inputBg, playerBg, accentGreenRgb, onAccent) are computed automatically.
 };
 
 function openCustomThemeEditor() {
@@ -2766,38 +3400,39 @@ function applyCustomTheme() {
     }
   });
   
-  // Apply CSS variables
   const root = document.documentElement;
-  root.style.setProperty('--bg-gradient-start', theme.bgGradientStart);
-  root.style.setProperty('--bg-gradient-mid', theme.bgGradientMid);
-  root.style.setProperty('--bg-gradient-end', theme.bgGradientEnd);
-  root.style.setProperty('--sidebar-bg', theme.sidebarBg);
-  root.style.setProperty('--card-bg', theme.cardBg);
-  root.style.setProperty('--card-hover-bg', theme.cardHoverBg);
-  root.style.setProperty('--text-primary', theme.textPrimary);
-  root.style.setProperty('--text-secondary', theme.textSecondary);
-  root.style.setProperty('--accent-green', theme.accentGreen);
-  root.style.setProperty('--accent-green-hover', theme.accentGreenHover);
+  const merged = ensureDerivedThemeVars({ ...theme });
+  Object.keys(merged).forEach(key => {
+    const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+    root.style.setProperty(cssVar, merged[key]);
+  });
   
-  // Save to localStorage
-  localStorage.setItem('customTheme', JSON.stringify(theme));
+  // Save to localStorage (store merged so refresh keeps derived too)
+  localStorage.setItem('customTheme', JSON.stringify(merged));
+  localStorage.setItem('selectedThemePreset', 'custom');
   
-  showMessage('Theme applied successfully!');
+  const selector = document.getElementById('themePresetSelector');
+  if (selector) {
+    selector.value = 'custom';
+  }
 }
 
 function resetCustomTheme() {
   // Clear custom theme from localStorage
   localStorage.removeItem('customTheme');
+  localStorage.setItem('selectedThemePreset', 'default');
   
-  // Reset to default values
-  const root = document.documentElement;
-  Object.keys(defaultTheme).forEach(key => {
-    const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
-    root.style.removeProperty(cssVar);
-  });
+  // Reset to default theme
+  applyThemePreset('default');
   
   // Reload default values in inputs
   loadCustomThemeValues();
+  
+  // Update selector
+  const selector = document.getElementById('themePresetSelector');
+  if (selector) {
+    selector.value = 'default';
+  }
   
   showMessage('Theme reset to default');
 }
@@ -2822,7 +3457,7 @@ function exportCustomTheme() {
 function importCustomTheme() {
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.json';
+  input.accept = '.json,.css';
   
   input.onchange = e => {
     const file = e.target.files[0];
@@ -2831,19 +3466,49 @@ function importCustomTheme() {
     const reader = new FileReader();
     reader.onload = event => {
       try {
-        const theme = JSON.parse(event.target.result);
+        const content = event.target.result;
+        let theme;
         
-        // Validate theme has required properties
-        const hasAllKeys = Object.keys(defaultTheme).every(key => key in theme);
-        if (!hasAllKeys) {
-          showMessage('Invalid theme file', 'error');
-          return;
+        // Check if it's a CSS file
+        if (file.name.endsWith('.css')) {
+          const cssVarRegex = /--([a-z-]+):\s*([^;]+);/gi;
+          let match;
+          theme = {};
+          while ((match = cssVarRegex.exec(content)) !== null) {
+            const varName = match[1].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            const varValue = match[2].trim();
+            theme[varName] = varValue;
+          }
+          if (Object.keys(theme).length === 0) {
+            showMessage('No CSS variables found in the file', 'error');
+            return;
+          }
+        } else {
+          theme = JSON.parse(content);
+          const hasAllKeys = Object.keys(defaultTheme).every(key => key in theme);
+          if (!hasAllKeys) {
+            showMessage('Invalid theme file', 'error');
+            return;
+          }
         }
         
-        // Save and apply
-        localStorage.setItem('customTheme', JSON.stringify(theme));
+        const merged = ensureDerivedThemeVars({ ...theme });
+        localStorage.setItem('customTheme', JSON.stringify(merged));
+        localStorage.setItem('selectedThemePreset', 'custom');
         loadCustomThemeValues();
-        applyCustomTheme();
+        
+        // Apply to CSS variables immediately
+        const root = document.documentElement;
+        Object.keys(merged).forEach(key => {
+          const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+          root.style.setProperty(cssVar, merged[key]);
+        });
+        
+        // Update selector
+        const selector = document.getElementById('themePresetSelector');
+        if (selector) {
+          selector.value = 'custom';
+        }
         
         showMessage('Theme imported successfully!');
       } catch (error) {
@@ -2865,15 +3530,245 @@ function initializeCustomTheme() {
     try {
       const theme = JSON.parse(savedTheme);
       const root = document.documentElement;
-      
-      Object.keys(theme).forEach(key => {
+      const merged = ensureDerivedThemeVars({ ...theme });
+      Object.keys(merged).forEach(key => {
         const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
-        root.style.setProperty(cssVar, theme[key]);
+        root.style.setProperty(cssVar, merged[key]);
       });
     } catch (error) {
       console.error('Failed to load custom theme:', error);
     }
   }
+}
+
+// Theme helpers and presets
+function hexToRgb(hex) {
+  const cleaned = hex.replace('#', '');
+  const bigint = parseInt(cleaned.length === 3 ? cleaned.split('').map(c => c + c).join('') : cleaned, 16);
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+}
+function rgbToString({ r, g, b }) { return `${r}, ${g}, ${b}`; }
+function getContrastOnColor(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 128 ? '#000' : '#fff';
+}
+function ensureDerivedThemeVars(colors) {
+  const accent = colors.accentGreen || '#2d8659';
+  const accentRgb = rgbToString(hexToRgb(accent));
+  const onAccent = getContrastOnColor(accent);
+  const derived = { ...colors };
+  // Provide commonly used derived vars if missing
+  if (!derived.borderColor) derived.borderColor = `rgba(${accentRgb}, 0.15)`;
+  if (!derived.textTertiary) derived.textTertiary = `rgba(${accentRgb}, 0.6)`;
+  if (!derived.inputBg) derived.inputBg = `rgba(${accentRgb}, 0.08)`;
+  if (!derived.playerBg) {
+    // Use sidebarBg as base if provided, else fall back to gradient start
+    const base = derived.sidebarBg || derived.bgGradientStart || '#0a1e14';
+    const { r, g, b } = hexToRgb(base.replace(/rgba?\(([^)]+)\)/, '#000000')); // crude fallback if rgba provided
+    derived.playerBg = `rgba(${r}, ${g}, ${b}, 0.95)`;
+  }
+  derived.accentGreenRgb = accentRgb;
+  derived.onAccent = onAccent;
+  // Danger palette default
+  if (!derived.dangerRgb) derived.dangerRgb = '231, 76, 60';
+  return derived;
+}
+
+// Theme Presets
+const themePresets = {
+  default: {
+    name: 'Default (Green Forest)',
+    colors: {
+      bgGradientStart: '#0d3d2e',
+      bgGradientMid: '#1a5943',
+      bgGradientEnd: '#0f4d38',
+      sidebarBg: '#0a1e14',
+      cardBg: '#0f281e',
+      cardHoverBg: '#143223',
+      textPrimary: '#e8f5e9',
+      textSecondary: '#c8ffd2',
+      accentGreen: '#2d8659',
+      accentGreenHover: '#3aa66f'
+    }
+  },
+  cyberpunk: {
+    name: 'Cyberpunk Neon',
+    colors: {
+      bgGradientStart: '#0a0a1a',
+      bgGradientMid: '#1a0a2e',
+      bgGradientEnd: '#16003e',
+      sidebarBg: '#0a0a1a',
+      cardBg: '#1a0a2e',
+      cardHoverBg: '#26104e',
+      textPrimary: '#00ffff',
+      textSecondary: '#00cccc',
+      accentGreen: '#ff006e',
+      accentGreenHover: '#ff3387'
+    }
+  },
+  ocean: {
+    name: 'Ocean Breeze',
+    colors: {
+      bgGradientStart: '#0a1929',
+      bgGradientMid: '#1a365d',
+      bgGradientEnd: '#0f2744',
+      sidebarBg: '#0a1929',
+      cardBg: '#0f2744',
+      cardHoverBg: '#1a365d',
+      textPrimary: '#e3f2fd',
+      textSecondary: '#bbdefb',
+      accentGreen: '#2196F3',
+      accentGreenHover: '#42A5F5'
+    }
+  },
+  cherry: {
+    name: 'Cherry Blossom',
+    colors: {
+      bgGradientStart: '#1a0009',
+      bgGradientMid: '#330014',
+      bgGradientEnd: '#26000f',
+      sidebarBg: '#1a0009',
+      cardBg: '#330014',
+      cardHoverBg: '#44001b',
+      textPrimary: '#fce4ec',
+      textSecondary: '#f8bbd0',
+      accentGreen: '#e91e63',
+      accentGreenHover: '#f06292'
+    }
+  },
+  midnight: {
+    name: 'Midnight Dark',
+    colors: {
+      bgGradientStart: '#000000',
+      bgGradientMid: '#0d0d0d',
+      bgGradientEnd: '#1a1a1a',
+      sidebarBg: '#000000',
+      cardBg: '#0d0d0d',
+      cardHoverBg: '#1a1a1a',
+      textPrimary: '#ffffff',
+      textSecondary: '#cccccc',
+      accentGreen: '#00ff00',
+      accentGreenHover: '#33ff33'
+    }
+  },
+  sunset: {
+    name: 'Sunset Orange',
+    colors: {
+      bgGradientStart: '#1a0f00',
+      bgGradientMid: '#331a00',
+      bgGradientEnd: '#4d2600',
+      sidebarBg: '#1a0f00',
+      cardBg: '#331a00',
+      cardHoverBg: '#4d2600',
+      textPrimary: '#fff3e0',
+      textSecondary: '#ffe0b2',
+      accentGreen: '#ff6f00',
+      accentGreenHover: '#ff8f00'
+    }
+  },
+  light: {
+    name: 'Light Mode',
+    colors: {
+      bgGradientStart: '#f8faf9',
+      bgGradientMid: '#f0f4f2',
+      bgGradientEnd: '#e8f0ed',
+      sidebarBg: 'rgba(255, 255, 255, 0.95)',
+      cardBg: 'rgba(255, 255, 255, 0.9)',
+      cardHoverBg: 'rgba(248, 255, 250, 1)',
+      textPrimary: '#1a1a1a',
+      textSecondary: 'rgba(26, 26, 26, 0.7)',
+      accentGreen: '#2d9561',
+      accentGreenHover: '#257d51',
+      borderColor: 'rgba(0, 0, 0, 0.1)',
+      textTertiary: 'rgba(26, 26, 26, 0.5)',
+      inputBg: 'rgba(255, 255, 255, 0.8)',
+      playerBg: 'rgba(255, 255, 255, 0.98)',
+      accentGreenRgb: '45, 149, 97',
+      onAccent: '#ffffff'
+    }
+  }
+};
+
+function applyThemePreset(presetName) {
+  if (presetName === 'custom') {
+    openCustomThemeEditor();
+    return;
+  }
+  
+  const preset = themePresets[presetName];
+  if (!preset) return;
+  
+  const root = document.documentElement;
+  const merged = ensureDerivedThemeVars({ ...preset.colors });
+  Object.keys(merged).forEach(key => {
+    const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+    root.style.setProperty(cssVar, merged[key]);
+  });
+  
+  // Save selection
+  localStorage.setItem('selectedThemePreset', presetName);
+}
+
+function importThemeFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.css';
+  
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = event => {
+      try {
+        const cssContent = event.target.result;
+        
+        // Parse CSS variables from the file
+        const cssVarRegex = /--([a-z-]+):\s*([^;]+);/gi;
+        let match;
+        const theme = {};
+        
+        while ((match = cssVarRegex.exec(cssContent)) !== null) {
+          const varName = match[1].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+          const varValue = match[2].trim();
+          theme[varName] = varValue;
+        }
+        
+        if (Object.keys(theme).length === 0) {
+          showNotification('Import Failed', 'No CSS variables found in the file. Make sure your theme uses CSS variables like --accent-green.', 'error');
+          return;
+        }
+        
+        // Apply the theme
+        const root = document.documentElement;
+        const merged = ensureDerivedThemeVars({ ...theme });
+        Object.keys(merged).forEach(key => {
+          const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+          root.style.setProperty(cssVar, merged[key]);
+        });
+        
+        // Save as custom theme
+        localStorage.setItem('customTheme', JSON.stringify(merged));
+        localStorage.setItem('selectedThemePreset', 'custom');
+        
+        // Update selector
+        const selector = document.getElementById('themePresetSelector');
+        if (selector) {
+          selector.value = 'custom';
+        }
+        
+        showNotification('Theme Imported!', 'Your custom theme has been applied successfully.', 'success');
+      } catch (error) {
+        showNotification('Import Failed', 'Failed to parse CSS file: ' + error.message, 'error');
+        console.error('Theme import error:', error);
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+  
+  input.click();
 }
 
 // Show personalized greeting based on time of day

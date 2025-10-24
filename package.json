@@ -1,6 +1,6 @@
 {
   "name": "flowify-beta",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A free music player focused on privacy — no account, no tracking.",
   "author": "Flowify Team",
   "license": "MIT",
@@ -36,15 +36,14 @@
     "directories": {
       "output": "dist"
     },
-      "files": [
+    "files": [
       "main.js",
       "index.html",
-      "script.js",
-      "translations.js",
-      "styles.css",
-      "preload.js",
       "package.json",
+      "js/**/*",
+      "css/**/*",
       "assets/**/*",
+      "themes/**/*",
       "renderer/**/*",
       "build/**/*"
     ],
