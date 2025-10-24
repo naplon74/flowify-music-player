@@ -55,8 +55,8 @@
 
 ## 📸 Screenshots
 
-<!-- Add screenshots here -->
-*Coming soon - Screenshots of the main player, playlist view, and settings*
+![img1](assets/screenshots/screenshot1.png)
+![img2](assets/screenshots/screenshot2.png)
 
 ---
 
