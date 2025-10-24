@@ -55,8 +55,8 @@
 
 ## 📸 Screenshots
 
-![img1](assets/screenshots/screenshot1.png)
-![img2](assets/screenshots/screenshot2.png)
+![img1](../assets/screenshots/screenshot1.png)
+![img2](../assets/screenshots/screenshot2.png)
 
 ---
 
