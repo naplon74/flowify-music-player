@@ -102,23 +102,6 @@ Flowify supports fully customizable CSS themes! Change colors, fonts, animations
 
 ---
 
-## 📦 Project Structure
-
-```
-flowify-music-player/
-├── assets/              # Icons and static resources
-├── dist/                # Build output (generated)
-├── main.js              # Electron main process
-├── preload.js           # Preload script for IPC
-├── index.html           # Main UI markup
-├── script.js            # Renderer process logic
-├── styles.css           # Application styles
-├── package.json         # Dependencies and scripts
-└── electron-builder.json # Build configuration
-```
-
----
-
 ## 🔄 Auto-Update System
 
 Flowify includes a seamless auto-update system:
