@@ -23,6 +23,7 @@
 ## ✨ Features
 
 ### 🎧 Core Functionality
+- **100% FREE**
 - **High-Quality Streaming** - Stream music in lossless quality (FLAC/LOSSLESS)
 - **Smart Search** - Find any track, artist, or album instantly
 - **Custom Playlists** - Create, edit, and manage your music collections
