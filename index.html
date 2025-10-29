@@ -9,6 +9,7 @@
     />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/custom-theme.css" />
+    <link rel="stylesheet" href="css/new-features.css" />
     <script src="js/translations.js"></script>
   </head>
   <body data-theme="dark">
@@ -47,6 +48,14 @@
                 <img src="assets/flag-fr.png" alt="FR" class="flag-icon">
                 <span>Français</span>
               </button>
+              <button class="language-btn" data-lang="es" onclick="selectLanguage('es')">
+                <img src="assets/flag-sp.png" alt="ES" class="flag-icon">
+                <span>Español</span>
+              </button>
+              <button class="language-btn" data-lang="it" onclick="selectLanguage('it')">
+                <img src="assets/flag-it.png" alt="IT" class="flag-icon">
+                <span>Italiano</span>
+              </button>
             </div>
           </div>
           
@@ -72,6 +81,15 @@
           <button class="welcome-submit-btn" onclick="completeOnboarding()">
             <span data-i18n="letsGo">Let's Go!</span>
             <i class="fas fa-arrow-right"></i>
+          </button>
+          
+          <div class="welcome-divider">
+            <span>or</span>
+          </div>
+          
+          <button class="welcome-import-btn" onclick="importProfileFromWelcome()">
+            <i class="fas fa-file-import"></i>
+            <span>Import Existing Profile</span>
           </button>
         </div>
         
@@ -99,32 +117,31 @@
       <div class="navbar-right">
         <button
           class="navbar-icon-btn"
+          onclick="openMiniPlayer()"
+          title="Mini Player"
+        >
+          <i class="fas fa-square"></i>
+        </button>
+        <button
+          class="navbar-icon-btn"
           onclick="showSettingsModal()"
           title="Settings"
         >
           <i class="fas fa-cog"></i>
         </button>
-        <button
-          class="window-control-btn"
-          onclick="minimizeWindow()"
-          title="Minimize"
-        >
-          <i class="fas fa-window-minimize"></i>
-        </button>
-        <button
-          class="window-control-btn"
-          onclick="maximizeWindow()"
-          title="Maximize"
-        >
-          <i class="far fa-window-maximize"></i>
-        </button>
-        <button
-          class="window-control-btn close-btn"
-          onclick="closeWindow()"
-          title="Close"
-        >
-          <i class="fas fa-times"></i>
-        </button>
+        <div id="windowControls" class="window-controls windows-style">
+          <!-- Windows order (default HTML): Minimize, Maximize, Close -->
+          <!-- macOS style uses CSS row-reverse so display becomes: Close (red), Maximize (green), Minimize (yellow) -->
+          <button class="window-control-btn" onclick="minimizeWindow()" title="Minimize">
+            <i class="fas fa-window-minimize"></i>
+          </button>
+          <button class="window-control-btn" onclick="maximizeWindow()" title="Maximize">
+            <i class="far fa-window-maximize"></i>
+          </button>
+          <button class="window-control-btn close-btn" onclick="closeWindow()" title="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
     </nav>
 
@@ -146,6 +163,22 @@
         >
           <span class="nav-icon"><i class="fas fa-list"></i></span>
           <span data-i18n="navPlaylists">Playlists</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="queue"
+          onclick="showSection('queue')"
+        >
+          <span class="nav-icon"><i class="fas fa-stream"></i></span>
+          <span>Queue</span>
+        </div>
+        <div
+          class="nav-item"
+          data-section="statistics"
+          onclick="showSection('statistics')"
+        >
+          <span class="nav-icon"><i class="fas fa-chart-bar"></i></span>
+          <span>Statistics</span>
         </div>
         <div
           class="nav-item"
@@ -221,7 +254,47 @@
             >
               Search Results
             </h2>
-            <div id="results" class="track-grid"></div>
+            
+            <!-- Artists Results -->
+            <div id="artistsResults" style="display: none; margin-bottom: 30px;">
+              <h3 class="section-subtitle">
+                <i class="fas fa-user-music"></i> Artists
+              </h3>
+              <div class="gallery-container">
+                <button class="gallery-scroll-btn gallery-scroll-left" onclick="scrollGallery('artistsGallery', -1)">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div id="artistsGallery" class="horizontal-scroll-gallery"></div>
+                <button class="gallery-scroll-btn gallery-scroll-right" onclick="scrollGallery('artistsGallery', 1)">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Albums Results -->
+            <div id="albumsResults" style="display: none; margin-bottom: 30px;">
+              <h3 class="section-subtitle">
+                <i class="fas fa-compact-disc"></i> Albums
+              </h3>
+              <div class="gallery-container">
+                <button class="gallery-scroll-btn gallery-scroll-left" onclick="scrollGallery('albumsGallery', -1)">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div id="albumsGallery" class="horizontal-scroll-gallery"></div>
+                <button class="gallery-scroll-btn gallery-scroll-right" onclick="scrollGallery('albumsGallery', 1)">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Songs Results -->
+            <div id="songsResults" style="display: none; margin-bottom: 30px;">
+              <h3 class="section-subtitle">
+                <i class="fas fa-music"></i> Songs
+              </h3>
+              <div id="results" class="track-grid"></div>
+            </div>
+            
             <div id="searchEmpty" class="empty-state">
               <div class="welcome-state">
                 <i
@@ -269,6 +342,16 @@
               </div>
               <div class="setting-item">
                 <div class="setting-info">
+                  <h3><i class="fas fa-window-maximize"></i> Window Button Style</h3>
+                  <p>Switch between Windows and macOS style window controls</p>
+                </div>
+                <select id="windowButtonStyleSelector" onchange="setWindowButtonStyle(this.value)" style="width: 180px;">
+                  <option value="windows">Windows</option>
+                  <option value="macos">macOS</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <div class="setting-info">
                   <h3><i class="fas fa-fire"></i> <span data-i18n="showTrending">Show Trending Songs</span></h3>
                   <p data-i18n="showTrendingDesc">Show or hide trending section on Discover</p>
                 </div>
@@ -281,6 +364,61 @@
                 </div>
                 <label class="switch"><input type="checkbox" id="custToggleDiscord"><span class="slider"></span></label>
               </div>
+              
+              <!-- Equalizer -->
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-sliders-h"></i> Equalizer</h3>
+                  <p>Adjust audio frequencies</p>
+                </div>
+                <button class="btn" onclick="openEqualizer()">
+                  <i class="fas fa-adjust"></i> Open Equalizer
+                </button>
+              </div>
+              
+              <!-- Sleep Timer -->
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-moon"></i> Sleep Timer</h3>
+                  <p>Auto-pause music after set time</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <select id="sleepTimerSelect" class="theme-selector" style="flex: 1;">
+                    <option value="0">Off</option>
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="45">45 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="90">1.5 hours</option>
+                    <option value="120">2 hours</option>
+                  </select>
+                  <button class="btn" onclick="setSleepTimer()">
+                    <i class="fas fa-check"></i> Set
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Crossfade -->
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-exchange-alt"></i> Crossfade</h3>
+                  <p>Smooth transitions between songs</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <label class="switch"><input type="checkbox" id="crossfadeToggle"><span class="slider"></span></label>
+                  <input type="range" min="1" max="10" value="3" id="crossfadeDuration" style="flex: 1;" />
+                  <span id="crossfadeValue">3s</span>
+                </div>
+              </div>
+              
+              <!-- Visualizer -->
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h3><i class="fas fa-wave-square"></i> Audio Visualizer</h3>
+                  <p>Show visual effects during playback</p>
+                </div>
+                <label class="switch"><input type="checkbox" id="visualizerToggle"><span class="slider"></span></label>
+              </div>
             </div>
           </section>
 
@@ -291,6 +429,33 @@
               <h3>No playlists yet</h3>
               <p>Create your first playlist to organize your music</p>
             </div>
+          </section>
+
+          <section class="section" id="album-detail" style="display: none;">
+            <button class="btn btn-secondary" onclick="backFromAlbum()" style="margin-bottom: 20px;">
+              <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <div class="album-detail-header">
+              <img id="albumDetailCover" class="album-detail-cover" src="" alt="Album Cover" />
+              <div class="album-detail-info">
+                <h1 id="albumDetailTitle">Album Title</h1>
+                <p id="albumDetailArtist" class="album-detail-artist">Artist Name</p>
+                <p id="albumDetailYear" class="album-detail-meta"></p>
+                <p id="albumDetailCount" class="album-detail-meta">0 tracks</p>
+                <div class="album-detail-actions" style="margin-top: 20px;">
+                  <button class="btn" onclick="playAlbum()">
+                    <i class="fas fa-play"></i> Play Album
+                  </button>
+                  <button class="btn" onclick="addAlbumToQueue()">
+                    <i class="fas fa-plus"></i> Add to Queue
+                  </button>
+                  <button class="btn" onclick="saveAlbumAsPlaylist()">
+                    <i class="fas fa-save"></i> Save as Playlist
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="albumDetailTracks" class="track-list" style="margin-top: 30px;"></div>
           </section>
 
           <section class="section" id="playlist-detail">
@@ -339,13 +504,85 @@
             ></div>
           </section>
 
+          <!-- Queue Section -->
+          <section class="section" id="queue">
+            <h2 class="section-title"><i class="fas fa-stream"></i> Up Next</h2>
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+              <button class="btn btn-secondary" onclick="clearQueue()">
+                <i class="fas fa-trash"></i> Clear Queue
+              </button>
+              <button class="btn" onclick="saveQueueAsPlaylist()">
+                <i class="fas fa-save"></i> Save as Playlist
+              </button>
+              <button class="btn" onclick="shuffleQueue()">
+                <i class="fas fa-random"></i> Shuffle Queue
+              </button>
+            </div>
+            <div id="queueList"></div>
+          </section>
+
+          <!-- Statistics Section -->
+          <section class="section" id="statistics">
+            <h2 class="section-title"><i class="fas fa-chart-line"></i> Your Listening Statistics</h2>
+            
+            <!-- Overview Stats -->
+            <div class="stats-overview">
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                <div class="stat-details">
+                  <div class="stat-label">Total Plays</div>
+                  <div class="stat-number" id="statTotalPlays">0</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-details">
+                  <div class="stat-label">Listening Time</div>
+                  <div class="stat-number" id="statTotalTime">0h</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-music"></i></div>
+                <div class="stat-details">
+                  <div class="stat-label">Top Song</div>
+                  <div class="stat-number" id="statTopSong">None</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-music"></i></div>
+                <div class="stat-details">
+                  <div class="stat-label">Top Artist</div>
+                  <div class="stat-number" id="statTopArtist">None</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Recent Activity Chart -->
+            <div class="stats-section">
+              <h3><i class="fas fa-calendar-week"></i> Recent Activity (Last 7 Days)</h3>
+              <div id="activityChart" class="activity-chart"></div>
+            </div>
+            
+            <!-- Top Songs -->
+            <div class="stats-section">
+              <h3><i class="fas fa-trophy"></i> Top Songs</h3>
+              <div id="topSongsList" class="stats-list"></div>
+            </div>
+            
+            <!-- Top Artists -->
+            <div class="stats-section">
+              <h3><i class="fas fa-star"></i> Top Artists</h3>
+              <div id="topArtistsList" class="stats-list"></div>
+            </div>
+          </section>
+
           <section class="section" id="info">
             <h2 class="section-title">About Flowify</h2>
             <div class="info-container">
               <div class="info-card">
                 <h3><i class="fas fa-sync-alt"></i> Updates</h3>
                 <div id="updateStatus" class="update-status">
-                  <p>Current Version: <strong>v0.0.3</strong></p>
+                  <p>Current Version: <strong>v0.0.4</strong></p>
                   <button class="btn" onclick="checkForUpdates()">
                     <i class="fas fa-download"></i> Check for Updates
                   </button>
@@ -357,16 +594,24 @@
                 <h3><i class="fas fa-list-alt"></i> Changelog</h3>
                 <div class="changelog">
                   <div class="changelog-entry">
-                    <div class="changelog-version">v0.0.3 - Beta</div>
+                    <div class="changelog-version">v0.0.4 - Beta</div>
                     <ul>
-                      <li><i class="fas fa-star"></i> Windows 11 media controls integration (Media Session API)</li>
-                      <li><i class="fas fa-bolt"></i> Performance optimizations - lazy loading, DOM caching, passive listeners</li>
-                      <li><i class="fas fa-server"></i> Dual API support - Digger API + YouTube Music API (experimental)</li>
-                      <li><i class="fas fa-youtube"></i> YouTube InnerTube API integration with fallback clients</li>
-                      <li><i class="fas fa-wrench"></i> Fixed onboarding name input issue (permanent fix)</li>
-                      <li><i class="fas fa-toggle-on"></i> Debug mode toggle for development</li>
-                      <li><i class="fas fa-compress"></i> ASAR compression for faster app loading</li>
-                      <li><i class="fas fa-shield-alt"></i> DevTools disabled in production for cleaner UI</li>
+                      <li><i class="fas fa-language"></i> Added Spanish and Italian translations</li>
+                      <li><i class="fas fa-flag"></i> Onboarding language selector updated with 🇪🇸 and 🇮🇹 flags</li>
+                      <li><i class="fas fa-exchange-alt"></i> Language switcher added in Settings (dropdown only)</li>
+                      <li><i class="fas fa-window-maximize"></i> Window Button Style toggle (Windows/macOS) with correct order/colors</li>
+                      <li><i class="fab fa-discord"></i> Fixed duplicate Discord RPC logs by guarding connection attempts</li>
+                      <li><i class="fas fa-moon"></i> Added Sleep Timer feature in Customize section</li>
+                      <li><i class="fas fa-exchange-alt"></i> Added Crossfade feature
+                      <li><i class="fas fa-wave-square"></i> Added Audio Visualizer toggle in Customize section</li>
+                      <li><i class="fas fa-palette"></i> New Theme Presets: Ocean Breeze, Cherry Blossom, Midnight Dark, Sunset Orange</li>
+                      <li><i class="fas fa-file-import"></i> Import Theme CSS file option added</li>
+                      <li><i class="fas fa-info-circle"></i> Improved Info section with update</li>
+                      <li><i class="fas fa-bug"></i> Various bug fixes and performance improvements</li>
+                      <li><i class="fas fa-headphones-alt"></i> Added a mini player</li>
+                      <li><i class="fas fa-chart-line"></i> Added a Statistics tab</li>
+                      <li><i class="fas fa-file-alt"></i> Added Lyrics support</li>
+                      <li><i class="fas fa-exclamation-triangle"></i> Known issues: ALBUMS AND ARTISTS ARE BROKEN. Lyrics aren't synced with the song timestamp, I aim to fix this asap</li>
                     </ul>
                   </div>
                 </div>
@@ -455,6 +700,8 @@
             <select class="quality-select" id="languageSelect" onchange="changeLanguage(this.value)">
               <option value="en">English</option>
               <option value="fr">Français</option>
+              <option value="es">Español</option>
+              <option value="it">Italiano</option>
             </select>
           </div>
           <div class="setting-item">
@@ -465,6 +712,29 @@
             <button class="btn" onclick="changeUserName()">
               <i class="fas fa-edit"></i> Change Name
             </button>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h3><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h3>
+              <p>Customize hotkeys</p>
+            </div>
+            <button class="btn" onclick="openShortcutsEditor()">
+              <i class="fas fa-edit"></i> Edit Shortcuts
+            </button>
+          </div>
+          <div class="setting-item" style="border: 2px solid rgba(88, 166, 255, 0.3); background: rgba(88, 166, 255, 0.05);">
+            <div class="setting-info">
+              <h3><i class="fas fa-file-export"></i> Profile Export/Import</h3>
+              <p>Backup or restore your settings, playlists & data</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn" onclick="exportProfile()" style="flex: 1;">
+                <i class="fas fa-download"></i> Export Profile
+              </button>
+              <button class="btn btn-secondary" onclick="importProfile()" style="flex: 1;">
+                <i class="fas fa-upload"></i> Import Profile
+              </button>
+            </div>
           </div>
           <div class="setting-item" style="border: 2px solid rgba(255, 59, 48, 0.3); background: rgba(255, 59, 48, 0.05);">
             <div class="setting-info">
@@ -480,7 +750,7 @@
             Flowify is a free music player, we focus on privacy, no account, no
             tracking, no bullshit, just music.
           </p>
-          <p style="text-align: center;">Version 0.0.3 - Beta</p>
+          <p style="text-align: center;">Version 0.0.4 - Beta</p>
         </div>
       </div>
     </div>
@@ -578,6 +848,13 @@
           title="Like"
         >
           <i class="far fa-heart" id="currentLikeIcon"></i>
+        </button>
+        <button
+          class="control-btn"
+          onclick="openLyrics()"
+          title="Lyrics"
+        >
+          <i class="fas fa-align-left"></i>
         </button>
       </div>
 
@@ -752,6 +1029,103 @@
       </div>
     </div>
 
+    <!-- Equalizer Modal -->
+    <div id="equalizerModal" class="modal" onclick="closeEqualizerModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2><i class="fas fa-sliders-h"></i> Equalizer</h2>
+          <button class="modal-close" onclick="closeEqualizerModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 10px; font-weight: 600;">Preset:</label>
+          <select id="eqPresetSelect" onchange="applyEQPreset(this.value)" style="width: 100%; padding: 10px; border-radius: 8px; background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <option value="flat">Flat (Default)</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="jazz">Jazz</option>
+            <option value="classical">Classical</option>
+            <option value="bass">Bass Boost</option>
+            <option value="treble">Treble Boost</option>
+            <option value="vocal">Vocal</option>
+          </select>
+        </div>
+        <div id="eqSliders" style="display: flex; gap: 15px; justify-content: space-around; margin-bottom: 20px;">
+          <!-- EQ sliders will be generated by JS -->
+        </div>
+        <div id="eqVisualizer" style="height: 100px; background: var(--input-bg); border-radius: 8px; display: flex; align-items: flex-end; gap: 2px; padding: 10px; justify-content: space-around;">
+          <!-- Visualizer bars will be generated by JS -->
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="resetEqualizer()">Reset</button>
+          <button class="btn" onclick="closeEqualizerModal()">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcutsModal" class="modal" onclick="closeShortcutsModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
+          <button class="modal-close" onclick="closeShortcutsModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="shortcutsList" style="max-height: 400px; overflow-y: auto;">
+          <!-- Shortcuts list will be generated by JS -->
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="resetShortcuts()">Reset to Default</button>
+          <button class="btn" onclick="closeShortcutsModal()">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lyrics Modal -->
+    <div id="lyricsModal" class="modal" onclick="closeLyricsModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2><i class="fas fa-align-left"></i> Lyrics</h2>
+          <button class="modal-close" onclick="closeLyricsModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="lyricsContent" style="max-height: 400px; overflow-y: auto; padding: 20px; text-align: center; line-height: 1.8;">
+          <p style="color: var(--text-tertiary);">No lyrics available</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Lyrics View -->
+    <div id="fullscreenLyrics" class="fullscreen-lyrics" style="display: none;">
+      <div class="fullscreen-lyrics-header">
+        <div class="fullscreen-lyrics-info">
+          <h2 id="fullscreenLyricsTitle">Song Title</h2>
+          <p id="fullscreenLyricsArtist">Artist Name</p>
+        </div>
+        <button class="fullscreen-lyrics-close" onclick="closeFullscreenLyrics()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="fullscreen-lyrics-container" id="fullscreenLyricsContainer">
+        <div id="fullscreenLyricsContent" class="fullscreen-lyrics-content">
+          <p style="color: var(--text-tertiary);"><i class="fas fa-spinner fa-spin"></i> Loading lyrics...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visualizer Overlay -->
+    <div id="visualizerOverlay" style="display: none; position: fixed; bottom: 100px; left: 0; right: 0; height: 150px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none; z-index: 50;">
+      <canvas id="visualizerCanvas" style="width: 100%; height: 100%;"></canvas>
+    </div>
+
+
+    <script src="js/translations.js"></script>
+    <script src="js/statistics.js"></script>
+    <script src="js/albums.js"></script>
+    <script src="js/new-features.js"></script>
     <script src="js/script.js"></script>
   </body>
 </html>

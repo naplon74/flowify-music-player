@@ -2,7 +2,8 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.0.2-blue.svg)
+![Version](https://img.shields.io/badge/version-0.0.4-blue.svg)
+![State](https://img.shields.io/badge/state-beta-red.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 
 **A free, privacy-focused music player built with Electron**
@@ -15,15 +16,21 @@
 
 ---
 
+> [!WARNING]  
+> The app is in "Beta" meaning it is still unstable and you may experience issue. I suggest you make a backup of your playlist before an update.
+
+
 ## ✨ Features
 
 ### 🎧 Core Functionality
+- **100% FREE**
 - **High-Quality Streaming** - Stream music in lossless quality (FLAC/LOSSLESS)
 - **Smart Search** - Find any track, artist, or album instantly
 - **Custom Playlists** - Create, edit, and manage your music collections
 - **Liked Songs** - Build your personal favorites library
 - **Offline Downloads** - Download tracks for offline listening
 - **Artist Pages** - Explore full artist discographies
+- **Albums** - Explore albums (COMING SOON)
 
 ### 🎨 User Experience
 - **Modern UI** - Clean, intuitive interface with smooth animations
@@ -31,7 +38,7 @@
 - **Custom Themes** - Fully customizable CSS themes (colors, fonts, effects)
 - **Custom Window Controls** - Frameless design with integrated controls
 - **System Tray Integration** - Minimize to tray and control playback
-- **Discord Rich Presence** - Show what you're listening to on Discord
+- **Discord Rich Presence** - Show what you're listening to on Discord (BROKEN, SO FIXING IT)
 - **Auto-Updates** - Seamless background updates via GitHub releases
 
 ### 🔒 Privacy First
@@ -45,47 +52,6 @@
 - **Volume Control** - Smooth volume adjustment with memory
 - **Progress Seeking** - Jump to any point in a track
 - **Queue Management** - View and control your play queue
-
----
-
-## 📸 Screenshots
-
-<!-- Add screenshots here -->
-*Coming soon - Screenshots of the main player, playlist view, and settings*
-
----
-
-## 🎮 Usage
-
-### Basic Controls
-- **Play/Pause**: Spacebar or player button
-- **Next Track**: Right Arrow or skip button
-- **Previous Track**: Left Arrow or back button
-- **Search**: Click search bar and type
-- **Volume**: Drag volume slider or use volume buttons
-
-### Creating Playlists
-1. Click **Playlists** in the sidebar
-2. Click **+ Create Playlist**
-3. Enter a name and description
-4. Add songs by clicking the **+** button on any track
-
-### Editing Playlists
-1. Open any playlist
-2. Click the **Edit** button
-3. Modify the name or description
-4. Click **Save**
-
-### Downloading Music
-1. Find any track you want to download
-2. Click the **download** icon
-3. Tracks are saved locally for offline playback
-4. Access downloads from the **Downloads** section
-
-### Discord Integration
-1. Go to **Settings** (gear icon)
-2. Toggle **Discord Rich Presence**
-3. Your currently playing track will appear on your Discord profile
 
 ### 🎨 Custom Themes
 Flowify supports fully customizable CSS themes! Change colors, fonts, animations, and more.
@@ -105,6 +71,13 @@ Flowify supports fully customizable CSS themes! Change colors, fonts, animations
 - **[Custom Theme Guide](CUSTOM_THEME_GUIDE.md)** - Full customization guide
 - **[Quick Reference](THEME_QUICK_REFERENCE.md)** - Common customizations
 - **[Pre-made Themes](themes/)** - Ready-to-use themes
+
+---
+
+## 📸 Screenshots
+
+![img1](../assets/screenshots/screenshot1.png)
+![img2](../assets/screenshots/screenshot2.png)
 
 ---
 
@@ -129,23 +102,6 @@ Flowify supports fully customizable CSS themes! Change colors, fonts, animations
 
 ---
 
-## 📦 Project Structure
-
-```
-flowify-music-player/
-├── assets/              # Icons and static resources
-├── dist/                # Build output (generated)
-├── main.js              # Electron main process
-├── preload.js           # Preload script for IPC
-├── index.html           # Main UI markup
-├── script.js            # Renderer process logic
-├── styles.css           # Application styles
-├── package.json         # Dependencies and scripts
-└── electron-builder.json # Build configuration
-```
-
----
-
 ## 🔄 Auto-Update System
 
 Flowify includes a seamless auto-update system:
@@ -155,13 +111,6 @@ Flowify includes a seamless auto-update system:
 3. **User Control** - You decide when to download and install
 4. **Background Download** - Updates download without interrupting playback
 5. **Install on Quit** - Updates install when you close the app
-
-### For Developers: Publishing Updates
-1. Update version in `package.json`
-2. Build the app: `npm run build:win`
-3. Create a GitHub release with tag `vX.X.X`
-4. Upload both the installer and `latest.yml` file
-5. Users will automatically be notified of the update
 
 ---
 
@@ -184,21 +133,6 @@ Contributions are welcome! Here's how you can help:
 2. Describe the feature and its use case
 3. Explain why it would benefit users
 
-### Pull Requests
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly
-5. Commit with clear messages (`git commit -m 'Add amazing feature'`)
-6. Push to your fork (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-### Development Guidelines
-- Follow existing code style
-- Test on multiple platforms if possible
-- Update documentation for new features
-- Keep commits atomic and well-described
-
 ---
 
 - Album artwork from **TIDAL Resources**
@@ -216,15 +150,12 @@ Contributions are welcome! Here's how you can help:
 
 ## 🗺️ Roadmap
 
-### Upcoming Features
-- [ ] Lyrics support
-- [ ] Equalizer and audio effects
-- [ ] Last.fm scrobbling
-- [ ] Keyboard shortcuts customization
-- [ ] Import/export playlists
-- [ ] Cloud sync (optional)
-- [ ] Mini player mode
-- [ ] Visualizer
+### Upcoming Features (✅= Release in next update | ⚠️= Experimental release)
+- [ ] Lyrics support (⚠️)
+- [ ] Equalizer and audio effects (✅)
+- [ ] Keyboard shortcuts customization (✅)
+- [ ] Mini player mode (✅)
+- [ ] Visualizer (✅)
 
 ### Known Issues
 - See [Issues](https://github.com/naplon74/flowify-music-player/issues) for current bugs and feature requests
@@ -233,7 +164,7 @@ Contributions are welcome! Here's how you can help:
 
 <div align="center">
 
-**Made with ❤️ for music lovers**
+**Made with ❤️ for music lovers by Naplon_**
 
 ⭐ Star this repo if you like Flowify! ⭐
 

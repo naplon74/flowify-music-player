@@ -104,56 +104,160 @@ autoUpdater.on('update-downloaded', (info) => {
 const clientId = '1430189312678559764'; // You can replace with your own Discord App ID
 let rpc = null;
 let rpcConnected = false;
+let isConnecting = false; // Prevent duplicate connection attempts
+let discordEnabled = false; // Respect renderer preference; don't connect until enabled
+let pendingActivity = null; // Activity to set once RPC becomes ready
 
-// Function to connect to Discord (auto-detects Stable, PTB, Canary)
+// Function to connect to Discord (auto-detects Stable, PTB, Canary, Development)
 async function connectDiscord() {
+  // Prevent duplicate connection attempts
+  if (isConnecting || rpcConnected) {
+    debugLog('Already connecting or connected to Discord RPC, skipping duplicate attempt', 'info');
+    return;
+  }
+  
+  isConnecting = true;
+  
   try {
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+    debugLog('Attempting to connect to Discord RPC...', 'info');
+    debugLog('Discord enabled state: ' + discordEnabled, 'info');
+    
+    // Clean up any existing connection first
+    if (rpc) {
+      try {
+        if (rpc.transport && rpc.transport.socket) {
+          rpc.destroy();
+        }
+      } catch (e) {
+        debugLog('RPC cleanup warning: ' + e.message, 'warning');
+      }
+      rpc = null;
+      rpcConnected = false;
+    }
+    
+    // Register for multiple Discord client types (Stable, PTB, Canary, Development)
+    DiscordRPC.register(clientId);
+    debugLog('Discord RPC client registered', 'info');
+    
+    rpc = new DiscordRPC.Client({ 
+      transport: 'ipc'
+    });
 
     rpc.on('ready', () => {
       rpcConnected = true;
-      debugLog('Discord Rich Presence initialized', 'info');
+      isConnecting = false; // Connection successful
+      debugLog('Discord Rich Presence initialized successfully!', 'info');
       debugLog('-----------------------------------------------------------', 'info');
+      debugLog('Connected to Discord client', 'info');
       debugLog('If RPC doesn\'t show up, check these Discord settings:', 'info');
       debugLog('1. Settings > Activity Privacy > "Display current activity" = ON', 'info');
       debugLog('2. Settings > Activity Privacy > "Share detected activities" = ON', 'info');
       debugLog('3. Make sure you\'re looking at your own profile/status', 'info');
+      debugLog('4. Supported: Discord Stable, PTB, Canary, and Development', 'info');
       debugLog('-----------------------------------------------------------', 'info');
 
-      // Set initial presence
-      rpc.setActivity({
-        details: 'Browsing music',
-        state: 'In main menu',
-        startTimestamp: Date.now(),
-        largeImageKey: 'music_icon',
-        largeImageText: 'Flowify Player - Beta',
-        smallImageKey: 'github',
-        smallImageText: 'github.com/naplon74/flowify-music-player',
-        instance: false,
-      }).then(() => {
-        debugLog('✓ Discord Rich Presence is now active!', 'info');
-        debugLog('✓ Check your Discord profile to see "Browsing music"', 'info');
-      }).catch(err => {
-        debugLog('Could not set Discord presence: ' + err.message, 'error');
-      });
+      // If we were asked to set an activity before ready, do it now (only if enabled)
+      if (discordEnabled && pendingActivity) {
+        const activity = buildActivityFromData(pendingActivity);
+        debugLog('Setting pending Discord RPC activity after connect', 'info');
+        rpc.setActivity(activity).catch(err => {
+          debugLog('Failed to set pending Discord RPC: ' + err.message, 'error');
+          rpcConnected = false;
+        });
+        pendingActivity = null;
+      }
     });
 
     rpc.on('error', (err) => {
       debugLog('Discord RPC error: ' + err.message, 'error');
       rpcConnected = false;
+      isConnecting = false; // Reset on error
     });
 
-    await rpc.login({ clientId }).catch(err => {
-      debugLog('Discord not detected. Rich Presence will be disabled.', 'warning');
-      rpc = null;
-      rpcConnected = false;
+    debugLog('Attempting Discord login (timeout: 20s)...', 'info');
+    
+    // Retry login with longer timeout
+    const loginPromise = rpc.login({ clientId });
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Connection timeout - retrying...')), 20000)
+    );
+    
+    await Promise.race([loginPromise, timeoutPromise]).catch(async err => {
+      if (err.message.includes('timeout') || err.message.includes('RPC_CONNECTION_TIMEOUT')) {
+        debugLog('First attempt timed out, retrying in 2 seconds...', 'warning');
+        
+        // Clean up and retry once
+        if (rpc) {
+          try {
+            if (rpc.transport && rpc.transport.socket) {
+              rpc.destroy();
+            }
+          } catch (e) {
+            debugLog('RPC cleanup warning during retry: ' + e.message, 'warning');
+          }
+        }
+        
+        rpc = new DiscordRPC.Client({ transport: 'ipc' });
+        
+        // Re-attach event handlers
+        rpc.on('ready', () => {
+          rpcConnected = true;
+          isConnecting = false; // Connection successful on retry
+          debugLog('Discord Rich Presence connected on retry!', 'info');
+          if (discordEnabled && pendingActivity) {
+            const activity = buildActivityFromData(pendingActivity);
+            rpc.setActivity(activity).catch(() => {});
+            pendingActivity = null;
+          }
+        });
+        
+        rpc.on('error', (e) => {
+          debugLog('Discord RPC error: ' + e.message, 'error');
+          rpcConnected = false;
+          isConnecting = false; // Reset on error
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await rpc.login({ clientId }).catch(retryErr => {
+          debugLog('Discord connection failed after retry. Discord may not be running or RPC may be blocked.', 'warning');
+          debugLog('Error: ' + retryErr.message, 'warning');
+          debugLog('Try: 1) Restart Discord, 2) Disable antivirus/firewall, 3) Run Discord as admin', 'info');
+          rpc = null;
+          rpcConnected = false;
+          isConnecting = false; // Reset on failure
+        });
+      } else {
+        debugLog('Discord not detected. Make sure Discord (Stable/PTB/Canary) is running.', 'warning');
+        debugLog('Error: ' + err.message, 'warning');
+        rpc = null;
+        rpcConnected = false;
+        isConnecting = false; // Reset on failure
+      }
     });
 
   } catch (err) {
     debugLog('Discord connection error: ' + err.message, 'warning');
     rpc = null;
     rpcConnected = false;
+    isConnecting = false; // Reset on exception
   }
+}
+
+// Helper to normalize activity payloads
+function buildActivityFromData(data) {
+  return {
+    details: (data?.details && data.details.trim() !== '') ? data.details : 'Browsing music',
+    state: (data?.state && data.state.trim() !== '') ? data.state : 'In main menu',
+    largeImageKey: 'music_icon',
+    largeImageText: 'Flowify Player - Beta',
+    smallImageKey: 'github',
+    smallImageText: 'github.com/naplon74/flowify-music-player',
+    buttons: [
+      { label: 'Download App', url: 'https://github.com/naplon74/flowify-music-player' }
+    ],
+    instance: false,
+    ...(data?.startTimestamp ? { startTimestamp: data.startTimestamp } : { startTimestamp: Date.now() })
+  };
 }
 
 // Disable security features for audio streaming
@@ -170,6 +274,8 @@ if (!fs.existsSync(downloadsDir)) {
 
 let mainWindow;
 let tray = null;
+let miniWindow = null;
+let cachedPlayerState = null; // Store last known player state for mini window
 
 // Helper function to send logs to renderer
 function debugLog(message, type = 'info') {
@@ -189,7 +295,7 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      devTools: false, // Disable DevTools
+      devTools: true, // Enable DevTools for debugging
       webSecurity: false,
       allowRunningInsecureContent: true,
       experimentalFeatures: true,
@@ -228,17 +334,19 @@ const createWindow = () => {
 
   mainWindow.loadFile('index.html')
   
-  // Remove menu bar completely and disable DevTools
+  // Remove menu bar completely
   mainWindow.setMenuBarVisibility(false)
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    // Block all DevTools shortcuts
-    if (input.key === 'F12' || 
-        (input.control && input.shift && input.key === 'I') ||
-        (input.control && input.shift && input.key === 'J') ||
-        (input.control && input.shift && input.key === 'C')) {
-      event.preventDefault()
-    }
-  })
+  
+  // TEMPORARILY ALLOW DEVTOOLS FOR DEBUGGING
+  // mainWindow.webContents.on('before-input-event', (event, input) => {
+  //   // Block all DevTools shortcuts
+  //   if (input.key === 'F12' || 
+  //       (input.control && input.shift && input.key === 'I') ||
+  //       (input.control && input.shift && input.key === 'J') ||
+  //       (input.control && input.shift && input.key === 'C')) {
+  //     event.preventDefault()
+  //   }
+  // })
 
   // Prevent window from closing, minimize to tray instead
   mainWindow.on('close', (event) => {
@@ -279,6 +387,27 @@ function createTray() {
   });
 }
 
+// =====================
+// Single-instance lock
+// =====================
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  // Another instance is already running – exit this one
+  app.quit();
+} else {
+  app.on('second-instance', (_event, _argv, _cwd) => {
+    // Someone tried to run a second instance; focus the existing window
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    } else if (app.isReady()) {
+      // If for some reason the window doesn't exist yet
+      createWindow();
+    }
+  });
+}
+
 // Window control handlers
 ipcMain.on('minimize-window', () => {
   if (mainWindow) mainWindow.minimize();
@@ -300,6 +429,12 @@ ipcMain.on('close-window', () => {
   }
 });
 
+// Handle app restart
+ipcMain.on('restart-app', () => {
+  app.relaunch();
+  app.exit(0);
+});
+
 // Handle file download
 ipcMain.handle('download-file', async (event, { url, filename }) => {
   return new Promise((resolve, reject) => {
@@ -319,52 +454,128 @@ ipcMain.handle('download-file', async (event, { url, filename }) => {
   });
 });
 
+// Mini player window create/show
+function createMiniWindow() {
+  if (miniWindow && !miniWindow.isDestroyed()) return miniWindow;
+  miniWindow = new BrowserWindow({
+    width: 340,
+    height: 480,
+    resizable: false,
+    frame: false,
+    transparent: false,
+    alwaysOnTop: false,
+    skipTaskbar: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      preload: path.join(__dirname, 'js', 'preload.js')
+    }
+  });
+  miniWindow.loadFile('mini.html');
+  miniWindow.on('closed', () => { miniWindow = null; });
+  return miniWindow;
+}
+
+ipcMain.on('open-mini-player', () => {
+  const win = createMiniWindow();
+  win.show();
+  win.focus();
+  // If we have cached state, send it immediately
+  if (cachedPlayerState) {
+    win.webContents.send('player-state', cachedPlayerState);
+  }
+});
+
+ipcMain.on('set-mini-pin', (_e, pinned) => {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.setAlwaysOnTop(!!pinned, 'screen-saver');
+  }
+});
+
+// Relay controls from mini to main renderer
+ipcMain.on('mini-control', (_e, payload) => {
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('player-control', payload || {});
+  }
+});
+
+// Receive state from main renderer and forward to mini
+ipcMain.on('player-state', (_e, state) => {
+  cachedPlayerState = state;
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.webContents.send('player-state', state);
+  }
+});
+
+// Mini requests initial state
+ipcMain.on('request-player-state', () => {
+  if (cachedPlayerState && miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.webContents.send('player-state', cachedPlayerState);
+  }
+});
+
 // Handle Discord RPC updates
 ipcMain.on('update-discord-rpc', (event, data) => {
-  // If data is empty/null, set default idle state instead of clearing
-  if (!data || (data.details === '' && data.state === '')) {
-    if (rpc && rpcConnected) {
-      debugLog('Setting Discord RPC to idle state...', 'info');
-      rpc.setActivity({
-        details: 'Browsing music',
-        state: 'Idle in main menu',
-        largeImageKey: 'music_icon',
-        largeImageText: 'Flowify Player - Beta',
-        smallImageKey: 'github',
-        smallImageText: 'github.com/naplon74/flowify-music-player',
-        instance: false,
-      }).then(() => {
-        debugLog('Discord RPC set to idle state', 'info');
-      }).catch(err => {
-        debugLog('Failed to set Discord RPC idle state: ' + err.message, 'error');
-        rpcConnected = false;
-      });
-    }
+  // Ignore all updates if RPC is disabled
+  if (!discordEnabled) {
+    debugLog('Discord RPC update ignored (disabled)', 'info');
     return;
   }
-  
-  if (rpc && rpcConnected && data) {
-    const activity = {
-      details: (data.details && data.details.trim() !== '') ? data.details : 'Browsing music',
-      state: (data.state && data.state.trim() !== '') ? data.state : 'In main menu',
-      largeImageKey: 'music_icon',
-      largeImageText: 'Flowify Player - Beta',
-      smallImageKey: 'github',
-      smallImageText: 'github.com/naplon74/flowify-music-player',
-      instance: false,
-    };
-    
-    if (data.startTimestamp) {
-      activity.startTimestamp = data.startTimestamp;
-    } else {
-      activity.startTimestamp = Date.now();
+
+  // If not connected yet, connect and set when ready
+  if (!rpc || !rpcConnected) {
+    pendingActivity = data || { details: 'Browsing music', state: 'In main menu' };
+    connectDiscord();
+    return;
+  }
+
+  // Connected: set/update activity
+  const activity = buildActivityFromData(data || {});
+  debugLog('Updating Discord RPC: ' + activity.details + ' - ' + activity.state, 'info');
+  rpc.setActivity(activity).catch(err => {
+    debugLog('Failed to update Discord RPC: ' + err.message, 'error');
+    rpcConnected = false;
+  });
+});
+
+// Handle Discord RPC enable/disable state from renderer
+ipcMain.on('set-discord-enabled', (event, enabled) => {
+  discordEnabled = !!enabled;
+  debugLog('Discord RPC enabled set to: ' + discordEnabled, 'info');
+
+  if (!discordEnabled) {
+    // Clear presence and disconnect
+    if (rpc) {
+      try {
+        if (typeof rpc.clearActivity === 'function') {
+          rpc.clearActivity();
+        } else {
+          // Fallback: set an empty/idle activity to effectively clear
+          rpc.setActivity({ details: '', state: '' }).catch(() => {});
+        }
+      } catch (e) {
+        debugLog('Error clearing Discord RPC activity: ' + e.message, 'warning');
+      }
+      try {
+        if (typeof rpc.disconnect === 'function') {
+          rpc.disconnect();
+        } else if (typeof rpc.destroy === 'function') {
+          rpc.destroy();
+        }
+        debugLog('Discord RPC disconnected due to disable', 'info');
+      } catch (err) {
+        debugLog('Error disconnecting Discord RPC: ' + err.message, 'error');
+      }
     }
-    
-    debugLog('Updating Discord RPC: ' + activity.details + ' - ' + activity.state, 'info');
-    rpc.setActivity(activity).catch(err => {
-      debugLog('Failed to update Discord RPC: ' + err.message, 'error');
-      rpcConnected = false;
-    });
+    rpc = null;
+    rpcConnected = false;
+    pendingActivity = null;
+  } else {
+    // Enabled: connect if not already
+    debugLog('Discord RPC enabled - attempting connection...', 'info');
+    if (!rpc || !rpcConnected) {
+      connectDiscord();
+    }
   }
 });
 
@@ -387,8 +598,7 @@ app.whenReady().then(() => {
       .finally(() => { silentUpdateCheck = false; });
   }, 3000);
   
-  // Try to connect to Discord after window is created
-  setTimeout(connectDiscord, 1000) // Small delay to ensure Discord is ready
+  // Do not auto-connect Discord; wait for renderer to opt-in via set-discord-enabled
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -415,3 +625,4 @@ app.on('before-quit', () => {
     }
   }
 })
+

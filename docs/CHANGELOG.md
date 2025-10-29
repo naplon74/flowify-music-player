@@ -1,4 +1,25 @@
 # Changelog
+## [0.0.4] - 2025-10-29
+
+### Added
+- Spanish (es) and Italian (it) translations across the app
+- Onboarding language selector updated with Spanish and Italian flag buttons
+- Language switcher in Settings (dropdown) with instant UI updates and persistence
+- Window Button Style toggle (Windows/macOS) with correct order and colors
+- Import/Export profile
+- Mini player
+- Statistics tabs
+- Added a sleep timer, crossfade, audio visualizer and Equalizer
+- Lyrics support
+
+### Fixed
+- Duplicate Discord RPC logs by guarding connection attempts and properly resetting flags
+
+### Known issues
+- Albums and Artists are broken. Hopefully they'll be fixed for 0.0.5
+- Lyrics aren't sinced with the song timestamp
+
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
