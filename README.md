@@ -10,9 +10,20 @@
 
 *No account required • No tracking • No ads*
 
-[Download Latest Release](https://github.com/naplon74/flowify-music-player/releases) • [Report Bug](https://github.com/naplon74/flowify-music-player/issues) • [Request Feature](https://github.com/naplon74/flowify-music-player/issues)
-
 </div>
+
+
+<p align="center">
+  <a href="https://github.com/naplon74/flowify-music-player/releases">
+    <img src="https://img.shields.io/badge/Get%20it%20on-GitHub-181717?logo=github&logoColor=white&style=for-the-badge" alt="Get it on GitHub"/>
+  </a>
+  <a href="https://github.com/naplon74/flowify-music-player/releases">
+    <img src="https://img.shields.io/badge/Get%20it%20soon%20on-WinGet-0078D7?logo=windows11&logoColor=white&style=for-the-badge" alt="Get it soon on WinGet"/>
+  </a>
+  <a href="https://github.com/naplon74/flowify-music-player/releases">
+    <img src="https://img.shields.io/badge/Get%20it%20son%20on-Flathub-4A90E2?logo=flathub&logoColor=white&style=for-the-badge" alt="Get it soon on Flathub"/>
+  </a>
+</p>
 
 ---
 
