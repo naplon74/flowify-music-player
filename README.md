@@ -17,7 +17,7 @@
 ---
 
 > [!WARNING]  
-> The app is in "Beta" meaning it is still unstable and you may experience issue. I suggest you make a backup of your playlist before an update.
+> The app is in "Beta" meaning it is still unstable and you may experience issue. I suggest you make a backup of your profile (Settings -> Export profile) before an update.
 
 
 ## ✨ Features
