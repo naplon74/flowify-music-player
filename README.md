@@ -30,6 +30,8 @@
 > [!WARNING]  
 > The app is in "Beta" meaning it is still unstable and you may experience issue. I suggest you make a backup of your profile (Settings -> Export profile) before an update.
 
+> [!IMPORTANT]  
+> Flowify is intended for educational and legal use only. You are solely responsible for the content you access.
 
 ## ✨ Features
 
