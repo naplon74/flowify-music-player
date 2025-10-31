@@ -39,7 +39,7 @@ Via winget: Open your terminal or a Powershell (Only on Windows 10/11) and paste
 ```bash
    winget install Flowify.Flowify
    ```
-## ✨ Features
+Via release: [https://github.com/naplon74/flowify-music-player/releases](https://github.com/naplon74/flowify-music-player/releases)
 
 ### 🎧 Core Functionality
 - **100% FREE**
