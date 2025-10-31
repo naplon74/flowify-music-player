@@ -164,9 +164,9 @@ Contributions are welcome! Here's how you can help:
 ## 🗺️ Roadmap
 
 ### Upcoming Features (✅= Release in next update | ⚠️= Experimental release)
-- [ ] Lyrics support (⚠️)
-- [ ] YouTube Music API (⚠️)
-- [ ] Albums and artists (⚠️)
+- Lyrics support (⚠️)
+- YouTube Music API (⚠️)
+- Albums and artists (⚠️)
 
 ### Known Issues
 - See [Issues](https://github.com/naplon74/flowify-music-player/issues) for current bugs and feature requests
