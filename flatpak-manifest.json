@@ -1,0 +1,35 @@
+{
+  "app-id": "com.flowify.musicplayer",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "23.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "main.js",
+  "modules": [
+    {
+      "name": "flowify",
+      "buildsystem": "simple",
+      "build-commands": [
+        "npm install",
+        "npm run build:linux || true"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        }
+      ]
+    }
+  ],
+  "finish-args": [
+    "--share=network",
+    "--filesystem=home",
+    "--device=all",
+    "--socket=pulseaudio",
+    "--socket=wayland",
+    "--socket=x11"
+  ],
+  "desktop-file-name-suffix": "",
+  "rename-desktop-file": "flowify.desktop",
+  "rename-icon": "flowify",
+  "tags": ["music", "audio", "player", "electron"]
+}
