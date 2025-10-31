@@ -165,10 +165,8 @@ Contributions are welcome! Here's how you can help:
 
 ### Upcoming Features (✅= Release in next update | ⚠️= Experimental release)
 - [ ] Lyrics support (⚠️)
-- [ ] Equalizer and audio effects (✅)
-- [ ] Keyboard shortcuts customization (✅)
-- [ ] Mini player mode (✅)
-- [ ] Visualizer (✅)
+- [ ] YouTube Music API (⚠️)
+- [ ] Albums and artists (⚠️)
 
 ### Known Issues
 - See [Issues](https://github.com/naplon74/flowify-music-player/issues) for current bugs and feature requests
