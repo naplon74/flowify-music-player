@@ -131,6 +131,9 @@ Flowify includes a seamless auto-update system:
 4. **Background Download** - Updates download without interrupting playback
 5. **Install on Quit** - Updates install when you close the app
 
+> [!WARNING] 
+> Auto Updater currently doesn't work for Linux.
+
 ---
 
 ## 🤝 Contributing
@@ -174,9 +177,6 @@ Contributions are welcome! Here's how you can help:
 - YouTube Music API (⚠️)
 - Albums and artists (⚠️)
 
-### Known Issues
-- See [Issues](https://github.com/naplon74/flowify-music-player/issues) for current bugs and feature requests
-
 ---
 
 <div align="center">
@@ -187,6 +187,6 @@ Contributions are welcome! Here's how you can help:
 
 **Flowify is intended for educational and legal use only. You are solely responsible for the content you access.**
 
-[Report Bug](https://github.com/naplon74/flowify-music-player/issues) • [Request Feature](https://github.com/naplon74/flowify-music-player/issues) • [Contribute](#-contributing)
+[Report Bug](https://github.com/naplon74/flowify-music-player/issues) • [Request Feature](https://github.com/naplon74/flowify-music-player/issues)
 
 </div>
