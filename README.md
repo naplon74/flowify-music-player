@@ -20,11 +20,11 @@
   <a href="https://github.com/naplon74/flowify-music-player/releases">
     <img src="https://img.shields.io/badge/Get%20it%20on-GitHub-181717?logo=github&logoColor=white&style=for-the-badge" alt="Get it on GitHub"/>
   </a>
-   <a href="#installation">
+   <a href="">
     <img src="https://img.shields.io/badge/Get%20it%20on-WinGet-0078D7?logo=windows11&logoColor=white&style=for-the-badge" alt="Get it on WinGet"/>
   </a>
   </a>
-  <a href="https://github.com/naplon74/flowify-music-player/releases">
+  <a href="">
     <img src="https://img.shields.io/badge/Get%20it%20son%20on-Flathub-4A90E2?logo=flathub&logoColor=white&style=for-the-badge" alt="Get it soon on Flathub"/>
   </a>
 </p>
@@ -36,13 +36,14 @@
 
 > [!WARNING] 
 > Flowify is intended for educational and legal use only. You are solely responsible for the content you access.
-## Installation
-Via winget: Open your terminal or a Powershell (Only on Windows 10/11) and paste this:
+
+## Installation (Windows 10 / Windows 11)
+> [!NOTE]
+> If you don't understand this you can simply ignore it and head to release and download the .exe installer.
 
 ```bash
 winget install Flowify.Flowify
    ```
-Via release: [https://github.com/naplon74/flowify-music-player/releases](https://github.com/naplon74/flowify-music-player/releases)
 
 ### 🎧 Core Functionality
 - **100% FREE**
