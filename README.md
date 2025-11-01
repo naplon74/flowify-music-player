@@ -138,6 +138,9 @@ Flowify includes a seamless auto-update system:
 > [!WARNING] 
 > Auto Updater currently doesn't work for Linux.
 
+> [!IMPORTANT] 
+> If you wish to upgrade to future version go to: Settings -> Export profile -> Save. Install the newer version from this repo and import your profile from the onboarding or from: Settings -> Important profile. (For Linux user, ignore if you use Windows.)
+
 ---
 
 ## 🤝 Contributing
