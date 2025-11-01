@@ -4,11 +4,14 @@
 
 ![Version](https://img.shields.io/badge/version-0.0.4-blue.svg)
 ![State](https://img.shields.io/badge/state-beta-red.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+[![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](#)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](#)
 
 **A free, privacy-focused music player built with Electron**
 
-*No account required • No tracking • No ads*
+*No account required (Digger API) • No tracking • No ads*
 
 </div>
 
