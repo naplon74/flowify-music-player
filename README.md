@@ -11,7 +11,7 @@
 
 **A free, privacy-focused music player built with Electron**
 
-*No account required (Digger API) • No tracking • No ads*
+*No account required • No tracking • No ads*
 
 </div>
 
@@ -36,9 +36,6 @@
 
 > [!WARNING] 
 > Flowify is intended for educational and legal use only. You are solely responsible for the content you access.
-
-> [!IMPORTANT]
-> Flowify will switch its main API to YouTube Music but it will require login to your YouTube Music account. I won't remove Digger so you can still use it without any account but understand that Digger API may not work at any time while YouTube Music is more stable. 
 
 ## Installation (Windows 10 / Windows 11)
 > [!NOTE]
