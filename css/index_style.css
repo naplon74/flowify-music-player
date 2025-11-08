@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Stack+Sans+Notch:wght@200..700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Stack Sans Notch', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.Main {
+    font-family: 'Stack Sans Notch', sans-serif;
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #1f2937;
+    padding: 50px 40px;
+    text-align: center;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h2 {
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: #6b7280;
+    margin-bottom: 40px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+li {
+    margin: 0;
+    font-size: 18px;
+    display: block;
+    width: 100%;
+}
+
+a.flowify, a.markedit {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  width: 100%;
+  padding: 24px 28px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 
+              0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  text-decoration: none;
+  color: #2563eb;
+  font-weight: 500;
+  font-size: 18px;
+}
+
+a.flowify:hover, a.markedit:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 
+              0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  color: #1d4ed8;
+}
+
+a.flowify img, a.markedit img {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+a.flowify:hover img, a.markedit:hover img {
+    transform: scale(1.15) rotate(5deg);
+}

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 MarkEdit - Desktop Markdown Editor</title>
+    <link rel="stylesheet" href="../css/markedit_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="../assets/markedit_logo.png">
+</head>
+<body>
+    <div class="container">
+        <header class="hero">
+            <div class="logo-section">
+                <i class="fas fa-file-code logo-icon"></i>
+                <h1>MarkEdit</h1>
+            </div>
+            <p class="tagline">A modern, feature-rich markdown editor with live preview</p>
+            <div class="badges">
+                <span class="badge">Windows</span>
+                <span class="badge">Auto-Updates</span>
+                <span class="badge">Git Integration</span>
+                <span class="badge">Discord RPC</span>
+            </div>
+            
+            <div class="download-buttons">
+                <a href="https://github.com/naplon74/markedit/releases/download/v1.3.0/Markedit-1.3.0-Setup.exe" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-download"></i> Download Latest - V1.3.0
+                </a>
+                <a href="https://github.com/naplon74/markedit/releases" class="btn btn-secondary" target="_blank">
+                    <i class="fab fa-github"></i> All Releases
+                </a>
+            </div>
+        </header>
+
+        <section class="alert info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Linux Support:</strong> Linux version coming soon!
+            </div>
+        </section>
+
+        <section class="updates">
+            <h2><i class="fas fa-rocket"></i> Recent Updates (November 2025)</h2>
+            <div class="update-grid">
+                <div class="update-card">
+                    <i class="fas fa-terminal"></i>
+                    <h3>Command Palette</h3>
+                    <p>Ctrl+Shift+P for quick access to word wrap, timestamps, and task list utilities</p>
+                </div>
+                <div class="update-card">
+                    <i class="fas fa-cog"></i>
+                    <h3>Revamped Settings</h3>
+                    <p>Organized sections with comprehensive changelog</p>
+                </div>
+                <div class="update-card">
+                    <i class="fas fa-file-import"></i>
+                    <h3>Drag & Drop Import</h3>
+                    <p>Drop .md files anywhere on the home screen</p>
+                </div>
+                <div class="update-card">
+                    <i class="fas fa-trash-alt"></i>
+                    <h3>Auto-Delete Empty Files</h3>
+                    <p>No more clutter from untitled files</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <h2><i class="fas fa-star"></i> Features</h2>
+            
+            <div class="feature-category">
+                <h3><i class="fas fa-edit"></i> Powerful Markdown Editing</h3>
+                <ul>
+                    <li>Real-time live preview (150ms debounced)</li>
+                    <li>GitHub Flavored Markdown (GFM)</li>
+                    <li>Single-line breaks render correctly</li>
+                    <li>Optional raw HTML support in preview</li>
+                    <li>Resizable editor and preview panes</li>
+                    <li>Auto-save with visual indicator</li>
+                    <li>Smart block spacing for lists and images</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-palette"></i> Customizable Themes</h3>
+                <ul>
+                    <li>Dark, Light, Green Forest, Deep Ocean, Sunset, Cyberpunk</li>
+                    <li>Live theme switching with persistence</li>
+                    <li>Word wrap toggle (persisted per session)</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-language"></i> Multi-Language Support</h3>
+                <ul>
+                    <li>English, French, Spanish, German</li>
+                    <li>Seamless language switching with localized UI</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-folder-open"></i> File Management</h3>
+                <ul>
+                    <li>Create, import, and export markdown files</li>
+                    <li>Recent files quick access</li>
+                    <li>File rename and delete with confirmation</li>
+                    <li>Export to .md, .txt, and .html (PDF via print)</li>
+                    <li>Drag & drop .md files to import</li>
+                    <li>Auto-delete empty untitled files</li>
+                    <li>External file deduplication</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fab fa-discord"></i> Discord Rich Presence</h3>
+                <ul>
+                    <li>Show what you're working on in Discord</li>
+                    <li>Displays the current file being edited</li>
+                    <li>Toggle on/off in settings</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-sync-alt"></i> Automatic Updates</h3>
+                <ul>
+                    <li>Checks automatically after startup</li>
+                    <li>Background download with progress indicator</li>
+                    <li>Restart Now or Later options</li>
+                    <li>Automatic installation and relaunch</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-image"></i> Offline Images & Icons</h3>
+                <ul>
+                    <li>Add images via toolbar button</li>
+                    <li>Files cached per document in app data folder</li>
+                    <li>Secure custom protocol: app-images://</li>
+                    <li>Font Awesome bundled locally</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fab fa-git-alt"></i> Git Integration (Optional)</h3>
+                <ul>
+                    <li>Toggle Git features in Settings</li>
+                    <li>Connect repository and commit from editor</li>
+                    <li>Push directly from editor footer</li>
+                    <li>Smart UI with quick commit/push</li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3><i class="fas fa-bolt"></i> Command Palette (Ctrl+Shift+P)</h3>
+                <ul>
+                    <li>Toggle Word Wrap - Soft wrap long lines</li>
+                    <li>Insert Timestamp - Add current date/time</li>
+                    <li>Convert to Task List - Transform to checkboxes</li>
+                    <li>Toggle Task Checkbox - Switch [ ] and [x]</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="screenshots">
+            <h2><i class="fas fa-images"></i> Screenshots</h2>
+            <div class="screenshot-grid">
+                <img src="../assets/screenshots/home.png" alt="MarkEdit Home Screen" onerror="this.style.display='none'">
+                <img src="../assets/screenshots/editor.png" alt="MarkEdit Editor View" onerror="this.style.display='none'">
+            </div>
+        </section>
+
+        <section class="markdown-wiki">
+            <h2><i class="fas fa-book"></i> Markdown Wiki</h2>
+            <p class="wiki-intro">Learn the basics of Markdown formatting to get the most out of MarkEdit!</p>
+            
+            <div class="wiki-grid">
+                <div class="wiki-card">
+                    <h3># Headings</h3>
+                    <code># H1<br>## H2<br>### H3</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>**Bold** & *Italic*</h3>
+                    <code>**bold text**<br>*italic text*<br>***bold & italic***</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>Lists</h3>
+                    <code>- Bullet item<br>1. Numbered item<br>- [ ] Task item</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>[Links](url)</h3>
+                    <code>[Link text](https://url.com)<br>![Image](image.jpg)</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>`Code`</h3>
+                    <code>`inline code`<br>```language<br>code block<br>```</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>> Blockquotes</h3>
+                    <code>> Quote text<br>>> Nested quote</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>Tables</h3>
+                    <code>| Col 1 | Col 2 |<br>|-------|-------|<br>| Data | Data |</code>
+                </div>
+                
+                <div class="wiki-card">
+                    <h3>Horizontal Rule</h3>
+                    <code>---<br>or<br>***</code>
+                </div>
+            </div>
+            
+            <a href="https://www.markdownguide.org/" target="_blank" class="btn btn-secondary wiki-link">
+                <i class="fas fa-external-link-alt"></i> Full Markdown Guide
+            </a>
+        </section>
+
+        <section class="shortcuts">
+            <h2><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
+            <div class="shortcuts-grid">
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>
+                    <span>Open command palette</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                    <span>Manual save</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Tab</kbd>
+                    <span>Insert 2 spaces</span>
+                </div>
+                <div class="shortcut-item">
+                    <kbd>Enter</kbd> <span class="note">on empty list</span>
+                    <span>Exit list with clean spacing</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="tech-stack">
+            <h2><i class="fas fa-code"></i> Technologies Used</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <i class="fab fa-js"></i>
+                    <span>Electron</span>
+                </div>
+                <div class="tech-item">
+                    <i class="fas fa-markdown"></i>
+                    <span>Marked</span>
+                </div>
+                <div class="tech-item">
+                    <i class="fab fa-git-alt"></i>
+                    <span>simple-git</span>
+                </div>
+                <div class="tech-item">
+                    <i class="fab fa-font-awesome"></i>
+                    <span>Font Awesome</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="roadmap">
+            <h2><i class="fas fa-map"></i> Roadmap</h2>
+            <div class="roadmap-columns">
+                <div class="roadmap-column completed">
+                    <h3><i class="fas fa-check-circle"></i> Completed</h3>
+                    <ul>
+                        <li>Command palette</li>
+                        <li>Word wrap toggle</li>
+                        <li>Auto-delete empty files</li>
+                        <li>Drag & drop import</li>
+                        <li>Single-line breaks</li>
+                        <li>Task list utilities</li>
+                        <li>File deduplication</li>
+                        <li>Organized settings</li>
+                    </ul>
+                </div>
+                <div class="roadmap-column upcoming">
+                    <h3><i class="fas fa-clock"></i> Upcoming</h3>
+                    <ul>
+                        <li>More export formats (DOCX, PDF native)</li>
+                        <li>Custom keyboard shortcuts</li>
+                        <li>Table generator dialog</li>
+                        <li>Content-based deduplication</li>
+                        <li>Performance optimization</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Made with ❤️ by naplon_</p>
+            <p class="tagline-footer">Happy Writing! ✍️</p>
+            <div class="footer-links">
+                <a href="https://github.com/naplon74/markedit/issues/new?labels=bug" target="_blank">
+                    <i class="fas fa-bug"></i> Report Bug
+                </a>
+                <a href="https://github.com/naplon74/markedit/issues/new?labels=enhancement" target="_blank">
+                    <i class="fas fa-lightbulb"></i> Request Feature
+                </a>
+                <a href="https://github.com/naplon74/markedit" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="https://github.com/naplon74/markedit/wiki" target="_blank">
+                    <i class="fas fa-book"></i> Documentation
+                </a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

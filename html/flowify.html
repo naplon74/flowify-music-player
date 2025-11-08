@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 Flowify Beta - Music Player</title>
+    <link rel="stylesheet" href="../css/flowify_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="../assets/flowify_logo.png">
+</head> 
+<body>
+    <div class="container">
+        <header class="hero">
+            <div class="logo-section">
+                <i class="fas fa-music logo-icon"></i>
+                <h1>Flowify</h1>
+            </div>
+            <p class="tagline">A free, privacy-focused music player</p>
+            <div class="badges">
+                <span class="badge">v0.0.5 Beta</span>
+                <span class="badge">No Account Required</span>
+                <span class="badge">No Tracking</span>
+                <span class="badge">No Ads</span>
+            </div>
+            
+            <div class="download-buttons">
+                <a href="https://github.com/naplon74/flowify-music-player/releases/download/v0.0.5/Flowify-Setup-0.0.5.exe" class="btn btn-primary" download>
+                    <i class="fas fa-download"></i> Download Setup (v0.0.5)
+                </a>
+                <a href="https://github.com/naplon74/flowify-music-player/releases" class="btn btn-secondary" target="_blank">
+                    <i class="fab fa-github"></i> All Releases
+                </a>
+                <button onclick="showWinGetCommand()" class="btn btn-secondary">
+                    <i class="fab fa-windows"></i> WinGet
+                </button>
+                <a href="#" class="btn btn-secondary">
+                    <i class="fas fa-box"></i> Flathub (Soon)
+                </a>
+            </div>
+            
+            <!-- WinGet Modal -->
+            <div id="wingetModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeWinGetModal()">&times;</span>
+                    <h3><i class="fab fa-windows"></i> Install via WinGet</h3>
+                    <p>Copy and run this command in your terminal:</p>
+                    <div class="command-box">
+                        <code id="wingetCommand">winget install Flowify.Flowify</code>
+                        <button onclick="copyWinGetCommand()" class="copy-btn">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <p class="command-note">Make sure you have WinGet installed on Windows 10/11</p>
+                </div>
+            </div>
+        </header>
+
+        <section class="alert caution">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Beta Software:</strong> The app is still unstable and you may experience issues. Make a backup of your profile before updating.
+            </div>
+        </section>
+
+        <section class="features">
+            <h2><i class="fas fa-star"></i> Features</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fas fa-headphones"></i>
+                    <h3>High-Quality Streaming</h3>
+                    <p>Stream music in lossless quality (FLAC/LOSSLESS)</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-search"></i>
+                    <h3>Smart Search</h3>
+                    <p>Find any track, artist, or album instantly</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-list"></i>
+                    <h3>Custom Playlists</h3>
+                    <p>Create, edit, and manage your music collections</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-heart"></i>
+                    <h3>Liked Songs</h3>
+                    <p>Build your personal favorites library</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-download"></i>
+                    <h3>Offline Downloads</h3>
+                    <p>Download tracks for offline listening</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-palette"></i>
+                    <h3>Custom Themes</h3>
+                    <p>Fully customizable CSS themes</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fab fa-discord"></i>
+                    <h3>Discord Integration</h3>
+                    <p>Show what you're listening to</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-sync"></i>
+                    <h3>Auto-Updates</h3>
+                    <p>Seamless background updates</p>
+                </div>
+                
+                <div class="feature-card">
+                    <i class="fas fa-lock"></i>
+                    <h3>Privacy First</h3>
+                    <p>No tracking, all data stored locally</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="screenshots">
+            <h2><i class="fas fa-images"></i> Screenshots</h2>
+            <div class="screenshot-grid">
+                <img src="../assets/screenshots/onboarding.png" alt="Flowify Screenshot 1" onerror="this.style.display='none'">
+                <img src="../assets/screenshots/player.png" alt="Flowify Screenshot 2" onerror="this.style.display='none'">
+            </div>
+        </section>
+
+        <section class="themes">
+            <h2><i class="fas fa-paint-brush"></i> Pre-made Themes</h2>
+            <div class="theme-grid">
+                <div class="theme-card">
+                    <div class="theme-preview cyberpunk"></div>
+                    <h3>🌃 Cyberpunk Neon</h3>
+                    <p>Futuristic pink and cyan</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview ocean"></div>
+                    <h3>🌊 Ocean Breeze</h3>
+                    <p>Calming blue tones</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview cherry"></div>
+                    <h3>🌸 Cherry Blossom</h3>
+                    <p>Soft pink elegance</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview forest"></div>
+                    <h3>🌲 Green Forest</h3>
+                    <p>Deep emerald nature</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview midnight"></div>
+                    <h3>🌙 Midnight Dark</h3>
+                    <p>Black and neon green</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview sunset"></div>
+                    <h3>🌅 Sunset Orange</h3>
+                    <p>Warm orange glow</p>
+                </div>
+                <div class="theme-card">
+                    <div class="theme-preview light"></div>
+                    <h3>☀️ Light Mode</h3>
+                    <p>Clean and bright</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="roadmap">
+            <h2><i class="fas fa-map"></i> Roadmap</h2>
+            <div class="roadmap-list">
+                <div class="roadmap-item experimental">
+                    <i class="fas fa-flask"></i>
+                    <span>Lyrics support (Experimental)</span>
+                </div>
+                <div class="roadmap-item experimental">
+                    <i class="fab fa-youtube"></i>
+                    <span>YouTube Music API (Experimental)</span>
+                </div>
+                <div class="roadmap-item experimental">
+                    <i class="fas fa-compact-disc"></i>
+                    <span>Albums and artists (Experimental)</span>
+                </div>
+                <div class="roadmap-item experimental">
+                    <i class="fab fa-linux"></i>
+                    <span>Linux support</span>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Made with ❤️ for music lovers by Naplon_</p>
+            <p class="disclaimer">Flowify is intended for educational and legal use only. You are solely responsible for the content you access.</p>
+            <div class="footer-links">
+                <a href="https://github.com/naplon74/flowify-music-player/issues" target="_blank">
+                    <i class="fas fa-bug"></i> Report Bug
+                </a>
+                <a href="https://github.com/naplon74/flowify-music-player/issues" target="_blank">
+                    <i class="fas fa-lightbulb"></i> Request Feature
+                </a>
+                <a href="https://github.com/naplon74/flowify-music-player" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function showWinGetCommand() {
+            document.getElementById('wingetModal').style.display = 'flex';
+        }
+
+        function closeWinGetModal() {
+            document.getElementById('wingetModal').style.display = 'none';
+        }
+
+        function copyWinGetCommand() {
+            const command = document.getElementById('wingetCommand').textContent;
+            navigator.clipboard.writeText(command).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                copyBtn.style.background = '#4caf50';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.background = '';
+                }, 2000);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('wingetModal');
+            if (event.target === modal) {
+                closeWinGetModal();
+            }
+        }
+    </script>
+</body>
+</html>
